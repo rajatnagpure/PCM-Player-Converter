@@ -44,6 +44,7 @@ public class FileUtils {
         if (isKitKat && DocumentsContract.isDocumentUri(context, uri)) {
             // ExternalStorageProvider
             if (isExternalStorageDocument(uri)) {
+                Log.v("Rajat","Inside ext storage");
                 final String docId = DocumentsContract.getDocumentId(uri);
                 final String[] split = docId.split(":");
                 final String type = split[0];
@@ -55,9 +56,9 @@ public class FileUtils {
                     return null;
                 }
             }
-
             // DownloadsProvider
             else if (isDownloadsDocument(uri)) {
+                Log.v("Rajat","Inside downloaded doc");
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     final String id;
                     Cursor cursor = null;
@@ -133,6 +134,7 @@ public class FileUtils {
                 }
                 selection = "_id=?";
                 selectionArgs = new String[]{split[1]};
+                Log.v("Rajat","Media Doc");
 
                 return getDataColumn(context, contentUri, selection,
                         selectionArgs);

@@ -74,6 +74,16 @@
 
                 <View
                     android:layout_width="0dp"
+                    android:layout_height="@dimen/spacing_large" />
+
+                <ImageView
+                    android:adjustViewBounds="true"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/example_ss" />
+
+                <View
+                    android:layout_width="0dp"
                     android:layout_height="@dimen/spacing_medium" />
 
                 <TextView
@@ -93,59 +103,22 @@
 
                 <View
                     android:layout_width="0dp"
+                    android:layout_height="@dimen/spacing_large" />
+
+                <ImageView
+                    android:adjustViewBounds="true"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/example_ss_2" />
+
+                <View
+                    android:layout_width="0dp"
                     android:layout_height="@dimen/spacing_medium" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/_4_directly_edit_the_file_path"
-                    android:textSize="14sp" />
-
-            </LinearLayout>
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="@dimen/spacing_xlarge" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:text="@string/error_while_selecting_the_file_java_illegal_argument"
-                    android:textSize="20sp" />
-
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="@dimen/spacing_large" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/_1_just_try_to_browse_again_and_do_it_from_file_manager_in_nav_draw_of_browse_section_only"
-                    android:textSize="14sp" />
-
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="@dimen/spacing_large" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/_2_go_to_file_manager_select_the_file_send_share_the_file_select_pcm_player_and_converter_to_play"
-                    android:textSize="14sp" />
-
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="@dimen/spacing_large" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/_1_mail_us_at_rajatnagpureiiest_gmail_com"
                     android:textSize="14sp" />
 
             </LinearLayout>
