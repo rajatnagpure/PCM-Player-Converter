@@ -59,7 +59,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:text="File Doee not exist! Check file path?"
+                    android:text="@string/file_doee_not_exist_check_file_path"
                     android:textSize="20sp" />
 
                 <View
@@ -69,7 +69,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="1. In the browse section. Select File Manager in The Navigation Drawer > then Navigate to the file > Select > Hit okay."
+                    android:text="@string/_1_in_the_browse_section_select_file_manager_in_the_navigation_drawer_then_navigate_to_the_file_select_hit_okay"
                     android:textSize="14sp" />
 
                 <View
@@ -79,7 +79,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="2. Do not select file from the Download, Recent or any other option."
+                    android:text="@string/_2_do_not_select_file_from_the_download_recent_or_any_other_option"
                     android:textSize="14sp" />
                 <View
                     android:layout_width="0dp"
@@ -88,7 +88,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="3. Or go to file Manager > select the file > send/share the file > select PCM Player and Converter to Play."
+                    android:text="@string/_3_or_go_to_file_manager_select_the_file_send_share_the_file_select_pcm_player_and_converter_to_play"
                     android:textSize="14sp" />
 
                 <View
@@ -98,7 +98,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="4. Directly Edit the file path."
+                    android:text="@string/_4_directly_edit_the_file_path"
                     android:textSize="14sp" />
 
             </LinearLayout>
@@ -115,7 +115,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:text="Error while Selecting the File? (Java Illegal Argument)"
+                    android:text="@string/error_while_selecting_the_file_java_illegal_argument"
                     android:textSize="20sp" />
 
                 <View
@@ -125,7 +125,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="1. Just try to Browse again and do it from File Manager in Nav Draw of Browse Section only."
+                    android:text="@string/_1_just_try_to_browse_again_and_do_it_from_file_manager_in_nav_draw_of_browse_section_only"
                     android:textSize="14sp" />
 
                 <View
@@ -135,7 +135,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="2. Go to file Manager > select the file > send/share the file > select PCM Player and Converter to Play."
+                    android:text="@string/_2_go_to_file_manager_select_the_file_send_share_the_file_select_pcm_player_and_converter_to_play"
                     android:textSize="14sp" />
 
                 <View
@@ -145,7 +145,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="1. Mail us at rajatnagpureiiest@gmail.com."
+                    android:text="@string/_1_mail_us_at_rajatnagpureiiest_gmail_com"
                     android:textSize="14sp" />
 
             </LinearLayout>
@@ -162,7 +162,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:text="Encoding Not Listed?"
+                    android:text="@string/encoding_not_listed"
                     android:textSize="20sp" />
 
                 <View
@@ -172,7 +172,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="1. Mail us at rajatnagpureiiest@gmail.com."
+                    android:text="@string/_1_mail_us_at_rajatnagpureiiest_gmail_com"
                     android:textSize="14sp" />
 
                 <View
@@ -182,7 +182,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="2. We would update the app and roll out in next few days."
+                    android:text="@string/_2_we_would_update_the_app_and_roll_out_in_next_few_days"
                     android:textSize="14sp" />
 
                 <View
@@ -192,7 +192,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="3. update your app from play store and Enjoy :)"
+                    android:text="@string/_3_update_your_app_from_play_store_and_enjoy"
                     android:textSize="14sp" />
 
             </LinearLayout>
@@ -209,7 +209,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:text="Note"
+                    android:text="@string/note"
                     android:textStyle="bold"
                     android:textSize="20sp" />
 
@@ -220,7 +220,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="If you want some feature to be implemented or report a bug. Please mail us at rajatnagpureiiest@gmail.com."
+                    android:text="@string/if_you_want_some_feature_to_be_implemented_or_report_a_bug_please_mail_us_at_rajatnagpureiiest_gmail_com"
                     android:textSize="14sp" />
 
                 <View

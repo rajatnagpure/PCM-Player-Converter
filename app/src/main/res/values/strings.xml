@@ -4,4 +4,19 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="file_path">File Path</string>
     <string name="file_doesn_t_exist_help">Need Help? / File Doesn\'t Exist? / Java Error? </string>
+    <string name="file_doee_not_exist_check_file_path">File Doesn\'t exist! Check file path?</string>
+    <string name="_1_in_the_browse_section_select_file_manager_in_the_navigation_drawer_then_navigate_to_the_file_select_hit_okay"><![CDATA[1. In the browse section. Select File Manager in The Navigation Drawer > then Navigate to the file > Select > Hit okay.]]></string>
+    <string name="_2_do_not_select_file_from_the_download_recent_or_any_other_option">2. Do not select file from the Download, Recent or any other option.</string>
+    <string name="_3_or_go_to_file_manager_select_the_file_send_share_the_file_select_pcm_player_and_converter_to_play"><![CDATA[3. Or go to file Manager > select the file > send/share the file > select PCM Player and Converter to Play.]]></string>
+    <string name="_4_directly_edit_the_file_path">4. Directly Edit the file path.</string>
+    <string name="error_while_selecting_the_file_java_illegal_argument">Error while Selecting the File? (Java Illegal Argument)</string>
+    <string name="_1_just_try_to_browse_again_and_do_it_from_file_manager_in_nav_draw_of_browse_section_only">1. Just try to Browse again and do it from File Manager in Nav Draw of Browse Section only.</string>
+    <string name="_2_go_to_file_manager_select_the_file_send_share_the_file_select_pcm_player_and_converter_to_play"><![CDATA[2. Go to file Manager > select the file > send/share the file > select PCM Player and Converter to Play.]]></string>
+    <string name="_1_mail_us_at_rajatnagpureiiest_gmail_com">1. Mail us at rajatnagpureiiest@gmail.com.</string>
+    <string name="encoding_not_listed">Encoding Not Listed?</string>
+    <string name="_1_mail_us_at_rajatnagpureiiest_gmail_com">1. Mail us at rajatnagpureiiest@gmail.com.</string>
+    <string name="_2_we_would_update_the_app_and_roll_out_in_next_few_days">2. We would update the app and roll out in next few days.</string>
+    <string name="_3_update_your_app_from_play_store_and_enjoy">3. update your app from play store and Enjoy :)</string>
+    <string name="note">Note</string>
+    <string name="if_you_want_some_feature_to_be_implemented_or_report_a_bug_please_mail_us_at_rajatnagpureiiest_gmail_com">If you want some feature to be implemented or report a bug. Please mail us at rajatnagpureiiest@gmail.com.</string>
 </resources>
