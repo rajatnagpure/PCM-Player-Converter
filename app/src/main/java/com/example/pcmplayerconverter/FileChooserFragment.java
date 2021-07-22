@@ -136,4 +136,9 @@ public class FileChooserFragment extends Fragment {
     public String getPath()  {
         return this.editTextPath.getText().toString();
     }
+
+    public void setPath(String filepath)  {
+        this.editTextPath.setText(filepath);
+        Log.d("Rajat Chooser: ", filepath);
+    }
 }

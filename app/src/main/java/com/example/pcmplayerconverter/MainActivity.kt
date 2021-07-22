@@ -1,19 +1,19 @@
 package com.example.pcmplayerconverter
 
+import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioFormat
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.widget.*
-import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
+import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import java.io.*
 import java.lang.Integer.parseInt
-import android.Manifest
-import android.webkit.MimeTypeMap
 
 class MainActivity : AppCompatActivity() {
     private var fragment: FileChooserFragment? = null
@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val fragmentManager: androidx.fragment.app.FragmentManager = this.supportFragmentManager
+        var fragmentManager: androidx.fragment.app.FragmentManager = this.supportFragmentManager
         this.fragment = fragmentManager.findFragmentById(R.id.fragment_fileChooser) as FileChooserFragment
 
         encodingSpinner = findViewById(R.id.encoding_spinner)
@@ -43,12 +43,36 @@ class MainActivity : AppCompatActivity() {
         convertToMp3 = findViewById(R.id.convert_to_mp3_button)
         convertToWav = findViewById(R.id.convert_to_wav_button)
 
+        when (intent?.action) {
+            Intent.ACTION_SEND -> {
+                val audioFile: Uri? = intent.getParcelableExtra(Intent.EXTRA_STREAM)
+                if (audioFile != null) {
+                    filePath = audioFile.path.toString().replace("/external_dir","")
+                    filePath = "/storage/emulated/0$filePath"
+                    Log.d("Rajat", filePath)
+                    fragment!!.path = filePath
+                }
+            }
+            Intent.ACTION_SEND_MULTIPLE -> {
+                val audioFileList: ArrayList<Uri> = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM)!!
+                for (uri in audioFileList) {
+                    Toast.makeText(this, "Please select single file", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
         val encodings: MutableList<String> = ArrayList()
         encodings.add("PCM 8-bit")
         encodings.add("PCM 16-bit")
         val channels: MutableList<String> = ArrayList()
         channels.add("Mono (1 Channel)")
         channels.add("Stereo (2 Channels)")
+
+        val help = findViewById<CardView>(R.id.help)
+        help.setOnClickListener{
+            val notLoadingIntent = Intent(this, NeedHelp::class.java)
+            startActivity(notLoadingIntent);
+        }
 
         val encodingAdapter: ArrayAdapter<String> = ArrayAdapter<String>(
             this,
@@ -79,8 +103,8 @@ class MainActivity : AppCompatActivity() {
                 if(!convert(WAV)){
                     return@setOnClickListener
                 }
-                val intent = Intent(this,MusicPlayer::class.java)
-                intent.putExtra("uri",filePath.removeSuffix("pcm")+"wav")
+                val intent = Intent(this, MusicPlayer::class.java)
+                intent.putExtra("uri", filePath.removeSuffix("pcm") + "wav")
                 startActivity(intent)
             }
         }
@@ -99,7 +123,11 @@ class MainActivity : AppCompatActivity() {
                 if(!convert(WAV)){
                     return@setOnClickListener
                 }
-                Toast.makeText(this, "Wave File Stored at: " + filePath.removeSuffix("pcm")+"wav" , Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    this,
+                    "Wave File Stored at: " + filePath.removeSuffix("pcm") + "wav",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
 
@@ -111,19 +139,23 @@ class MainActivity : AppCompatActivity() {
     private fun convert(format: Int): Boolean{
         val fileIn = File(filePath)
         if(!fileIn.exists()) {
-            Toast.makeText(this, "File Doesn't Exist! Check File Path!!!", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "File Does Not Exist! Check File Path!!!", Toast.LENGTH_LONG).show()
             return false
         }
         var fileOut:File? = null
         try {
             if(format == MP3){
                 fileOut = File(filePath.removeSuffix("pcm") + "mp3")
-                conversionFunctions.rawToWave(samplingRate, encoding.toShort(),
-                    channel.toShort(),fileIn, fileOut)
+                conversionFunctions.rawToWave(
+                    samplingRate, encoding.toShort(),
+                    channel.toShort(), fileIn, fileOut
+                )
             }else{
                 fileOut = File(filePath.removeSuffix("pcm") + "wav")
-                conversionFunctions.rawToWave(samplingRate,
-                    encoding.toShort(), channel.toShort(),File(filePath),fileOut)
+                conversionFunctions.rawToWave(
+                    samplingRate,
+                    encoding.toShort(), channel.toShort(), File(filePath), fileOut
+                )
             }
         }catch (e: Exception){
             Toast.makeText(this, "Error! in conversion function", Toast.LENGTH_SHORT).show()
@@ -135,13 +167,13 @@ class MainActivity : AppCompatActivity() {
     private fun updateValues(): Boolean {
         filePath = fragment!!.path
         encoding = when(encodingSpinner?.selectedItem as String){
-            "PCM 8-bit"-> 8
-            "PCM 16-bit"-> 16
+            "PCM 8-bit" -> 8
+            "PCM 16-bit" -> 16
             else -> 8
         }
         channel = when(channelsSpinner?.selectedItem as String){
-            "Mono (1 Channel)"-> 1
-            "Stereo (2 Channels)"-> 2
+            "Mono (1 Channel)" -> 1
+            "Stereo (2 Channels)" -> 2
             else-> AudioFormat.CHANNEL_IN_MONO
         }
         try {

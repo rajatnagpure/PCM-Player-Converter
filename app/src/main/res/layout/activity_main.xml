@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -8,148 +8,176 @@
     android:padding="14dp"
     tools:context=".MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="PCM"
-        android:textColor="@color/accent"
-        android:textSize="25sp"
-        android:textStyle="bold"
-        android:layout_gravity="center_horizontal"/>
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Player &amp; Converter "
-        android:textColor="@color/accent"
-        android:textSize="20sp"
-        android:layout_marginBottom="21dp"
-        android:layout_gravity="center_horizontal"/>
-
-    <ScrollView
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
         <LinearLayout
-            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PCM"
+                android:textColor="@color/accent"
+                android:textSize="25sp"
+                android:textStyle="bold"
+                android:layout_gravity="center_horizontal"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Player &amp; Converter "
+                android:textColor="@color/accent"
+                android:textSize="20sp"
+                android:layout_marginBottom="21dp"
+                android:layout_gravity="center_horizontal"/>
+        </LinearLayout>
+
+        <ScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
-            <fragment
-                android:id="@+id/fragment_fileChooser"
-                android:name="com.example.pcmplayerconverter.FileChooserFragment"
-                android:layout_marginBottom="21dp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
-
             <LinearLayout
+                android:orientation="vertical"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingLeft="7dp"
-                android:orientation="vertical">
+                android:layout_height="wrap_content">
+                <fragment
+                    android:id="@+id/fragment_fileChooser"
+                    android:name="com.example.pcmplayerconverter.FileChooserFragment"
+                    android:layout_marginBottom="21dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="7dp"
-                    android:orientation="horizontal">
-                    <TextView
+                    android:paddingLeft="7dp"
+                    android:orientation="vertical">
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:layout_marginRight="7dp"
-                        android:text="Encoding : "
-                        android:layout_marginEnd="7dp" />
-                    <Spinner
-                        android:id="@+id/encoding_spinner"
-                        android:layout_width="200dp"
-                        android:layout_height="wrap_content"
-                        android:background="@android:drawable/btn_dropdown"
-                        android:spinnerMode="dropdown"/>
-                </LinearLayout>
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="7dp"
-                    android:orientation="horizontal">
-                    <TextView
+                        android:layout_marginBottom="7dp"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginRight="7dp"
+                            android:text="Encoding : "
+                            android:layout_marginEnd="7dp" />
+                        <Spinner
+                            android:id="@+id/encoding_spinner"
+                            android:layout_width="200dp"
+                            android:layout_height="wrap_content"
+                            android:background="@android:drawable/btn_dropdown"
+                            android:spinnerMode="dropdown"/>
+                    </LinearLayout>
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:layout_marginRight="7dp"
-                        android:text="Channels : "
-                        android:layout_marginEnd="7dp" />
-                    <Spinner
-                        android:id="@+id/channels_spinner"
-                        android:layout_width="200dp"
-                        android:layout_height="wrap_content"
-                        android:background="@android:drawable/btn_dropdown"
-                        android:spinnerMode="dropdown"/>
-                </LinearLayout>
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="7dp"
-                    android:orientation="horizontal">
-                    <TextView
+                        android:layout_marginBottom="7dp"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginRight="7dp"
+                            android:text="Channels : "
+                            android:layout_marginEnd="7dp" />
+                        <Spinner
+                            android:id="@+id/channels_spinner"
+                            android:layout_width="200dp"
+                            android:layout_height="wrap_content"
+                            android:background="@android:drawable/btn_dropdown"
+                            android:spinnerMode="dropdown"/>
+                    </LinearLayout>
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:layout_marginRight="7dp"
-                        android:text="Sampling Rate : "
-                        android:layout_marginEnd="7dp" />
-                    <EditText
-                        android:id="@+id/sampling_rate_edit_text"
-                        android:layout_width="160dp"
-                        android:layout_height="wrap_content"
-                        android:inputType="number"
-                        android:text="8000"/>
+                        android:layout_marginBottom="7dp"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginRight="7dp"
+                            android:text="Sampling Rate : "
+                            android:layout_marginEnd="7dp" />
+                        <EditText
+                            android:id="@+id/sampling_rate_edit_text"
+                            android:layout_width="160dp"
+                            android:layout_height="wrap_content"
+                            android:inputType="number"
+                            android:text="8000"/>
+                    </LinearLayout>
+
                 </LinearLayout>
 
-            </LinearLayout>
-
-            <ImageButton
-                android:id="@+id/play_button"
-                android:layout_width="42dp"
-                android:layout_gravity="center_horizontal"
-                android:layout_height="42dp"
-                android:layout_margin="14dp"
-                android:backgroundTint="@color/accent"
-                android:backgroundTintMode="add"
-                android:requiresFadingEdge="horizontal"
-                android:background="@drawable/ic_baseline_play_arrow_24" />
-
-
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                <ImageButton
+                    android:id="@+id/play_button"
+                    android:layout_width="42dp"
                     android:layout_gravity="center_horizontal"
-                    android:text="Convert to:"/>
+                    android:layout_height="42dp"
+                    android:layout_margin="14dp"
+                    android:backgroundTint="@color/accent"
+                    android:backgroundTintMode="add"
+                    android:requiresFadingEdge="horizontal"
+                    android:background="@drawable/ic_baseline_play_arrow_24" />
+
+
 
                 <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_gravity="center_horizontal"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-                    <Button
-                        android:id="@+id/convert_to_mp3_button"
+                    android:orientation="vertical">
+
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_horizontal"
-                        android:layout_marginRight="7dp"
-                        android:text="MP3" />
-                    <Button
-                        android:id="@+id/convert_to_wav_button"
+                        android:text="Convert to:"/>
+
+                    <LinearLayout
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginLeft="7dp"
                         android:layout_gravity="center_horizontal"
-                        android:text="Wav" />
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <Button
+                            android:id="@+id/convert_to_mp3_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_marginRight="7dp"
+                            android:text="MP3" />
+                        <Button
+                            android:id="@+id/convert_to_wav_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginLeft="7dp"
+                            android:layout_gravity="center_horizontal"
+                            android:text="Wav" />
+                    </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
-        </LinearLayout>
-    </ScrollView>
+        </ScrollView>
+    </LinearLayout>
 
-</LinearLayout>
+    <androidx.cardview.widget.CardView
+        android:id="@+id/help"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        app:cardBackgroundColor="@android:color/white"
+        app:cardCornerRadius="0dp"
+        app:cardElevation="0dp"
+        app:cardUseCompatPadding="true">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:padding="5dp"
+            android:text="@string/file_doesn_t_exist_help"
+            android:textAlignment="center" />
+    </androidx.cardview.widget.CardView>
+</RelativeLayout>
