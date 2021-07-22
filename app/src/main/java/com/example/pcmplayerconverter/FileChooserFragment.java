@@ -123,7 +123,7 @@ public class FileChooserFragment extends Fragment {
                             filePath = FileUtils.getPath(this.getContext(),fileUri);
                         } catch (Exception e) {
                             Log.e(LOG_TAG,"Error: " + e);
-                            Toast.makeText(this.getContext(), "Error: " + e, Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this.getContext(), "Java Error: Please see Need Help Page by clicking below Text.", Toast.LENGTH_SHORT).show();
                         }
                         this.editTextPath.setText(filePath);
                     }

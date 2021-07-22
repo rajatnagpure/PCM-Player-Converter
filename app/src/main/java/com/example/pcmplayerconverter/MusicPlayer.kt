@@ -57,6 +57,19 @@ class MusicPlayer : AppCompatActivity() {
         }
         seekbar?.progress = startTime
 
+        mediaPlayer!!.setOnCompletionListener {
+            playPauseButton?.setBackgroundResource(R.drawable.ic_baseline_play_arrow_24)
+            play = true
+            startTime = 0
+            currentTime?.text = (kotlin.String.format(
+                "%d:%d",
+                TimeUnit.MILLISECONDS.toMinutes(startTime.toLong()),
+                TimeUnit.MILLISECONDS.toSeconds(startTime.toLong()) -
+                        TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(startTime.toLong()))
+            ))
+            seekbar?.progress = startTime
+        }
+
         totalTime?.text = (kotlin.String.format(
             "%d:%d",
             TimeUnit.MILLISECONDS.toMinutes(finalTime.toLong()),
@@ -76,6 +89,8 @@ class MusicPlayer : AppCompatActivity() {
             if(!play){
                 mediaPlayer?.start()
                 playPauseButton?.setBackgroundResource(R.drawable.ic_baseline_pause_24)
+                myHandler.postDelayed(updateSongTime, 100)
+                finalTime = (mediaPlayer?.duration!!)
                 play = !play
             }else{
                 mediaPlayer?.pause()
@@ -93,6 +108,8 @@ class MusicPlayer : AppCompatActivity() {
                 mediaPlayer?.seekTo(startTime)
             }
             seekbar?.progress = startTime
+            playPauseButton?.setBackgroundResource(R.drawable.ic_baseline_pause_24)
+            play = !play
             mediaPlayer?.start()
         }
 
@@ -105,6 +122,8 @@ class MusicPlayer : AppCompatActivity() {
                 mediaPlayer?.seekTo(startTime)
             }
             seekbar?.progress = startTime
+            playPauseButton?.setBackgroundResource(R.drawable.ic_baseline_pause_24)
+            play = !play
             mediaPlayer?.start()
         }
     }

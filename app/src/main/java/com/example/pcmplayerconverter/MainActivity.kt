@@ -139,7 +139,7 @@ class MainActivity : AppCompatActivity() {
     private fun convert(format: Int): Boolean{
         val fileIn = File(filePath)
         if(!fileIn.exists()) {
-            Toast.makeText(this, "File Does Not Exist! Check File Path!!!", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "File Does Not Exist!: Please see Need Help Page by clicking below Text.", Toast.LENGTH_LONG).show()
             return false
         }
         var fileOut:File? = null
