@@ -1,4 +1,4 @@
-package com.example.pcmplayerconverter;
+package com.rajatnagpure.pcmplayerconverter;
 
 import android.annotation.SuppressLint;
 import android.content.ContentResolver;

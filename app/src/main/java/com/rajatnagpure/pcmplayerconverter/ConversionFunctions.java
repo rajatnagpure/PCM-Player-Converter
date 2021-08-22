@@ -1,4 +1,4 @@
-package com.example.pcmplayerconverter;
+package com.rajatnagpure.pcmplayerconverter;
 
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -17,8 +17,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import static android.content.ContentValues.TAG;
-import static com.example.pcmplayerconverter.Constants.RECORDER_AUDIO_ENCODING;
-import static com.example.pcmplayerconverter.Constants.RECORDER_SAMPLERATE;
+import static com.rajatnagpure.pcmplayerconverter.Constants.RECORDER_AUDIO_ENCODING;
 
 public class ConversionFunctions {
 

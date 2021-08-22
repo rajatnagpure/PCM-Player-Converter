@@ -1,4 +1,4 @@
-package com.example.pcmplayerconverter
+package com.rajatnagpure.pcmplayerconverter
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

@@ -1,4 +1,4 @@
-package com.example.pcmplayerconverter
+package com.rajatnagpure.pcmplayerconverter
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle

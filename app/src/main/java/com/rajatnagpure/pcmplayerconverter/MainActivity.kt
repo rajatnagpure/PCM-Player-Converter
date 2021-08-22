@@ -1,4 +1,4 @@
-package com.example.pcmplayerconverter
+package com.rajatnagpure.pcmplayerconverter
 
 import android.Manifest
 import android.content.Intent
@@ -12,8 +12,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import cafe.adriel.androidaudioconverter.AndroidAudioConverter
+import cafe.adriel.androidaudioconverter.callback.ILoadCallback
 import java.io.*
 import java.lang.Integer.parseInt
+
 
 class MainActivity : AppCompatActivity() {
     private var fragment: FileChooserFragment? = null
@@ -27,13 +30,29 @@ class MainActivity : AppCompatActivity() {
     private var samplingRate = 8000
     private var encoding = 0x10
     private var channel = 0x10
+//    private var ffmpegSupported = false
     private val conversionFunctions = ConversionFunctions()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+//
+//        AndroidAudioConverter.load(this, object : ILoadCallback {
+//            override fun onSuccess() {
+//                ffmpegSupported = true
+//            }
+//            override fun onFailure(error: java.lang.Exception) {
+//                ffmpegSupported = false
+//                Log.d("Rajat", error.toString())
+//                Toast.makeText(
+//                    this@MainActivity,
+//                    error.toString(),
+//                    Toast.LENGTH_SHORT
+//                ).show()
+//            }
+//        })
 
-        var fragmentManager: androidx.fragment.app.FragmentManager = this.supportFragmentManager
+        val fragmentManager: androidx.fragment.app.FragmentManager = this.supportFragmentManager
         this.fragment = fragmentManager.findFragmentById(R.id.fragment_fileChooser) as FileChooserFragment
 
         encodingSpinner = findViewById(R.id.encoding_spinner)
@@ -47,14 +66,15 @@ class MainActivity : AppCompatActivity() {
             Intent.ACTION_SEND -> {
                 val audioFile: Uri? = intent.getParcelableExtra(Intent.EXTRA_STREAM)
                 if (audioFile != null) {
-                    filePath = audioFile.path.toString().replace("/external_dir","")
+                    filePath = audioFile.path.toString().replace("/external_dir", "")
                     filePath = "/storage/emulated/0$filePath"
                     Log.d("Rajat", filePath)
                     fragment!!.path = filePath
                 }
             }
             Intent.ACTION_SEND_MULTIPLE -> {
-                val audioFileList: ArrayList<Uri> = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM)!!
+                val audioFileList: ArrayList<Uri> =
+                    intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM)!!
                 for (uri in audioFileList) {
                     Toast.makeText(this, "Please select single file", Toast.LENGTH_SHORT).show()
                 }
@@ -132,14 +152,36 @@ class MainActivity : AppCompatActivity() {
         }
 
         convertToMp3?.setOnClickListener{
-            Toast.makeText(this, "Coming Soon!", Toast.LENGTH_SHORT).show()
+            if(!updateValues()) return@setOnClickListener
+            if(filePath.isEmpty()){
+                Toast.makeText(this, "No File Selected!!!", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (filePath.substring(filePath.lastIndexOf('.') + 1) != "pcm"){
+                Toast.makeText(this, "Please Select a PCM file!!!", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if(checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)){
+                if(!convert(MP3)){
+                    return@setOnClickListener
+                }
+                Toast.makeText(
+                        this,
+                        "Mp3 File Stored at: " + filePath.removeSuffix("pcm") + "mp3",
+                        Toast.LENGTH_LONG
+                ).show()
+            }
         }
     }
 
     private fun convert(format: Int): Boolean{
         val fileIn = File(filePath)
         if(!fileIn.exists()) {
-            Toast.makeText(this, "File Does Not Exist!: Please see Need Help Page by clicking below Text.", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                this,
+                "File Does Not Exist!: Please see Need Help Page by clicking below Text.",
+                Toast.LENGTH_LONG
+            ).show()
             return false
         }
         var fileOut:File? = null
@@ -196,6 +238,7 @@ class MainActivity : AppCompatActivity() {
         }
         return true
     }
+
     companion object {
         private const val PERMISSION_REQUEST_CODE = 101
         private const val MP3 = 2

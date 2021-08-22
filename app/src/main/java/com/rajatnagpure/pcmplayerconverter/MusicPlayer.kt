@@ -1,8 +1,9 @@
-package com.example.pcmplayerconverter
+package com.rajatnagpure.pcmplayerconverter
 
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
+import android.util.Log
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.SeekBar
@@ -68,6 +69,10 @@ class MusicPlayer : AppCompatActivity() {
                         TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(startTime.toLong()))
             ))
             seekbar?.progress = startTime
+            mediaPlayer?.start()
+            mediaPlayer?.pause()
+            Log.d("Rajat: ", "seekbar progress: " + seekbar?.progress)
+            Log.d("Rajat: ", "seekbar finish: " + seekbar?.max)
         }
 
         totalTime?.text = (kotlin.String.format(

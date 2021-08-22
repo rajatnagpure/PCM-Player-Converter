@@ -11,6 +11,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingBottom="50dp"
         android:orientation="vertical">
         <LinearLayout
             android:layout_width="match_parent"
@@ -43,7 +44,7 @@
                 android:layout_height="wrap_content">
                 <fragment
                     android:id="@+id/fragment_fileChooser"
-                    android:name="com.example.pcmplayerconverter.FileChooserFragment"
+                    android:name="com.rajatnagpure.pcmplayerconverter.FileChooserFragment"
                     android:layout_marginBottom="21dp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"/>
