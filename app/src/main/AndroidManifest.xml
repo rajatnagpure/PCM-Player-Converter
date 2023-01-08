@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.rajatnagpure.pcmplayerconverter">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -18,7 +17,8 @@
         android:theme="@style/Theme.PCMPlayerConverter">
         <activity android:name="com.rajatnagpure.pcmplayerconverter.NeedHelp" />
         <activity android:name="com.rajatnagpure.pcmplayerconverter.MusicPlayer" />
-        <activity android:name="com.rajatnagpure.pcmplayerconverter.MainActivity">
+        <activity android:name="com.rajatnagpure.pcmplayerconverter.MainActivity"
+            android:exported="true">
             <meta-data
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />

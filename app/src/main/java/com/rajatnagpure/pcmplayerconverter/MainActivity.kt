@@ -12,10 +12,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-//import cafe.adriel.androidaudioconverter.AndroidAudioConverter
-//import cafe.adriel.androidaudioconverter.callback.IConvertCallback
-//import cafe.adriel.androidaudioconverter.callback.ILoadCallback
-import com.rajatnagpure.pcmplayerconverter.MainActivity.Companion.MP3
 import java.io.*
 import java.lang.Integer.parseInt
 
@@ -41,16 +37,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-//        AndroidAudioConverter.load(this, object : ILoadCallback {
-//            override fun onSuccess() {
-//                ffmpegSupported = true
-//            }
-//            override fun onFailure(error: java.lang.Exception) {
-//                ffmpegSupported = false
-//                Log.d("Rajat", error.toString())
-//            }
-//        })
 
         val fragmentManager: androidx.fragment.app.FragmentManager = this.supportFragmentManager
         this.fragment = fragmentManager.findFragmentById(R.id.fragment_fileChooser) as FileChooserFragment
@@ -153,20 +139,6 @@ class MainActivity : AppCompatActivity() {
 
         convertToMp3?.setOnClickListener{
             Toast.makeText(this, "Coming Soon!", Toast.LENGTH_SHORT).show()
-//            if(!updateValues()) return@setOnClickListener
-//            if(filePath.isEmpty()){
-//                Toast.makeText(this, "No File Selected!!!", Toast.LENGTH_SHORT).show()
-//                return@setOnClickListener
-//            }
-//            if (filePath.substring(filePath.lastIndexOf('.') + 1) != "pcm"){
-//                Toast.makeText(this, "Please Select a PCM file!!!", Toast.LENGTH_SHORT).show()
-//                return@setOnClickListener
-//            }
-//            if(checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)){
-//                if(!convert(MP3)){
-//                    return@setOnClickListener
-//                }
-//            }
         }
     }
 
@@ -183,37 +155,11 @@ class MainActivity : AppCompatActivity() {
         var fileOut:File? = null
         try {
             if(format == MP3){
-//                if(!ffmpegSupported){
-//                    Toast.makeText(this@MainActivity, "FFmpeg Not Supported by Ur device! Plz try converting to Wav", Toast.LENGTH_LONG).show()
-//                    return false
-//                }
-//                fileOut = File(filePath.removeSuffix("pcm") + "wav")
-//                conversionFunctions.rawToWave(
-//                        samplingRate, encoding.toShort(),
-//                        channel.toShort(), fileIn, fileOut
-//                )
-//                val callback: IConvertCallback = object : IConvertCallback {
-//                    override fun onSuccess(convertedFile: File?) {
-//                        Toast.makeText(
-//                                this@MainActivity,
-//                                "Mp3 File Stored at: " + filePath.removeSuffix("pcm") + "mp3",
-//                                Toast.LENGTH_LONG
-//                        ).show()
-//                    }
-//                    override fun onFailure(error: java.lang.Exception) {
-//                        error.message?.let { Log.d("Rajat inside failure", it) }
-//                        Toast.makeText(
-//                                this@MainActivity,
-//                                error.message,
-//                                Toast.LENGTH_SHORT
-//                        ).show()
-//                    }
-//                }
-//                AndroidAudioConverter.with(this@MainActivity) // Your current audio file
-//                        .setFile(fileOut) // Your desired audio format
-//                        .setFormat(cafe.adriel.androidaudioconverter.model.AudioFormat.MP3) // An callback to know when conversion is finished
-//                        .setCallback(callback) // Start conversion
-//                        .convert()
+                fileOut = File(filePath.removeSuffix("pcm") + "wav")
+                conversionFunctions.rawToWave(
+                        samplingRate,
+                        encoding.toShort(), channel.toShort(), File(filePath), fileOut
+                )
             }else{
                 fileOut = File(filePath.removeSuffix("pcm") + "wav")
                 conversionFunctions.rawToWave(
