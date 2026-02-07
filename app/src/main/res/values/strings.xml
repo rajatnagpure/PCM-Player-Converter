@@ -18,4 +18,7 @@
     <string name="_3_update_your_app_from_play_store_and_enjoy">3. update your app from play store and Enjoy :)</string>
     <string name="note">Note</string>
     <string name="if_you_want_some_feature_to_be_implemented_or_report_a_bug_please_mail_us_at_rajatnagpureiiest_gmail_com">If you want some feature to be implemented or report a bug. Please mail us at rajatnagpureiiest@gmail.com.</string>
+    <string name="what_is_pcm">PCM (Pulse Code Modulation) is a digital representation of sampled analog signals.</string>
+    <string name="how_to_play">To play a PCM file, you must first convert it to a WAV file. Select the file, set the correct parameters, and click Play.</string>
+    <string name="troubleshooting">If you encounter issues, ensure you are using the correct sampling rate and encoding for your PCM file.</string>
 </resources>
