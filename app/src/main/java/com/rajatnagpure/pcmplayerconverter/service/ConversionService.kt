@@ -10,6 +10,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.rajatnagpure.pcmplayerconverter.R
 import com.rajatnagpure.pcmplayerconverter.domain.usecase.ConvertPcmUseCase
+import com.rajatnagpure.pcmplayerconverter.domain.usecase.ConvertAudioToPcmUseCase
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -25,6 +26,9 @@ class ConversionService : Service() {
     @Inject
     lateinit var convertPcmUseCase: ConvertPcmUseCase
 
+    @Inject
+    lateinit var convertAudioToPcmUseCase: ConvertAudioToPcmUseCase
+
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -33,12 +37,24 @@ class ConversionService : Service() {
         val inFile = intent?.getSerializableExtra("inFile") as? File
         val outFile = intent?.getSerializableExtra("outFile") as? File
         val config = intent?.getParcelableExtra<com.rajatnagpure.pcmplayerconverter.domain.model.AudioConfig>("config")
+        val task = intent?.getStringExtra("task") ?: "PCM_TO_FORMAT"
 
-        if (inFile != null && outFile != null && config != null) {
+        if (inFile != null && outFile != null) {
             startForeground(1, createNotification("Converting..."))
             serviceScope.launch {
                 try {
-                    convertPcmUseCase(inFile, outFile, config)
+                    if (task == "AUDIO_TO_PCM") {
+                        // convert from input audio to PCM
+                        convertAudioToPcmUseCase(inFile, outFile)
+                    } else {
+                        // default: convert pcm to requested format
+                        if (config != null) {
+                            convertPcmUseCase(inFile, outFile, config)
+                        } else {
+                            throw IllegalArgumentException("Missing config for PCM conversion")
+                        }
+                    }
+
                     // notify success to UI
                     val successIntent = Intent(ACTION_CONVERSION_COMPLETE).apply {
                         putExtra("success", true)

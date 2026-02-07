@@ -2,6 +2,10 @@ package com.rajatnagpure.pcmplayerconverter.ui.viewmodel
 
 import android.net.Uri
 import android.os.Environment
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rajatnagpure.pcmplayerconverter.data.local.LocalFileDataSource
@@ -29,7 +33,30 @@ class GeneratorViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(GeneratorUiState())
     val uiState: StateFlow<GeneratorUiState> = _uiState.asStateFlow()
 
+    private val conversionReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent == null) return
+            if (intent.action == com.rajatnagpure.pcmplayerconverter.service.ConversionService.ACTION_CONVERSION_COMPLETE) {
+                val success = intent.getBooleanExtra("success", false)
+                val outPath = intent.getStringExtra("outFile")
+                viewModelScope.launch {
+                    if (success) {
+                        _uiState.value = _uiState.value.copy(isConverting = false, statusMessage = "Converted to ${outPath?.substringAfterLast('/')}" )
+                    } else {
+                        _uiState.value = _uiState.value.copy(isConverting = false, errorMessage = intent.getStringExtra("message"))
+                    }
+                }
+            }
+        }
+    }
+
     init {
+        // register receiver
+        val filter = IntentFilter().apply {
+            addAction(com.rajatnagpure.pcmplayerconverter.service.ConversionService.ACTION_CONVERSION_COMPLETE)
+        }
+        application.registerReceiver(conversionReceiver, filter)
+
         viewModelScope.launch {
             savedStateHandle.getStateFlow("uri", "{uri}").collect { uriStr ->
                 android.util.Log.d("GeneratorViewModel", "Received URI from SavedStateHandle: $uriStr")
@@ -57,6 +84,15 @@ class GeneratorViewModel @Inject constructor(
             recordAudioUseCase.amplitudeFlow.collect { amp ->
                 _uiState.value = _uiState.value.copy(currentAmplitude = amp)
             }
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        try {
+            application.unregisterReceiver(conversionReceiver)
+        } catch (e: Exception) {
+            // ignore
         }
     }
 
@@ -123,8 +159,23 @@ class GeneratorViewModel @Inject constructor(
             )
             // Toast removed: UI will display statusMessage once and clear it
         } else {
-            // Saving a conversion
-            performPcmConversion(fileName)
+            // Saving a conversion - now delegate to ConversionService for background processing
+            val inFile = _uiState.value.selectedFileToConvert ?: return
+            val outFile = File(inFile.parent, fileName)
+            _uiState.value = _uiState.value.copy(isConverting = true, showSaveDialog = false, errorMessage = null)
+
+            // start background ConversionService with task AUDIO_TO_PCM
+            val intent = android.content.Intent(application, com.rajatnagpure.pcmplayerconverter.service.ConversionService::class.java).apply {
+                putExtra("inFile", inFile)
+                putExtra("outFile", outFile)
+                putExtra("task", "AUDIO_TO_PCM")
+            }
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                application.startForegroundService(intent)
+            } else {
+                application.startService(intent)
+            }
         }
     }
 
