@@ -54,16 +54,68 @@ class PcmPlayer @Inject constructor() {
             // Ensure buffer size is valid
             val safeBufferSize = if (bufferSize > 0) bufferSize else config.sampleRate * 2
 
-            audioTrack = AudioTrack(
-                AudioManager.STREAM_MUSIC,
-                config.sampleRate,
-                channelConfig,
-                encoding,
-                safeBufferSize,
-                AudioTrack.MODE_STREAM
-            )
+            // Create AudioTrack using AudioAttributes/AudioFormat when possible and try fallbacks if initialization fails
+            fun buildAudioTrack(sampleRate: Int, chanConfig: Int, enc: Int, bufSize: Int): AudioTrack? {
+                return try {
+                    val attrs = android.media.AudioAttributes.Builder()
+                        .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build()
 
-            audioTrack?.play()
+                    val format = android.media.AudioFormat.Builder()
+                        .setEncoding(enc)
+                        .setChannelMask(chanConfig)
+                        .setSampleRate(sampleRate)
+                        .build()
+
+                    val track = AudioTrack.Builder()
+                        .setAudioAttributes(attrs)
+                        .setAudioFormat(format)
+                        .setBufferSizeInBytes(bufSize)
+                        .setTransferMode(AudioTrack.MODE_STREAM)
+                        .build()
+
+                    if (track.state == AudioTrack.STATE_INITIALIZED) track else null
+                } catch (e: Exception) {
+                    Log.e("PcmPlayer", "AudioTrack build failed", e)
+                    null
+                }
+            }
+
+            // Try the requested config first
+            audioTrack = buildAudioTrack(config.sampleRate, channelConfig, encoding, safeBufferSize)
+
+            // If initialization failed, try common fallbacks (sample rates and mono/stereo)
+            if (audioTrack == null) {
+                val fallbackSampleRates = listOf(config.sampleRate, 44100, 48000, 22050, 16000)
+                val channelOptions = listOf(channelConfig, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.CHANNEL_OUT_STEREO)
+                var created: AudioTrack? = null
+
+                outer@ for (sr in fallbackSampleRates) {
+                    for (chan in channelOptions) {
+                        try {
+                            val bs = AudioTrack.getMinBufferSize(sr, chan, encoding)
+                            val safeBs = if (bs > 0) bs else sr * 2
+                            created = buildAudioTrack(sr, chan, encoding, safeBs)
+                            if (created != null) {
+                                Log.d("PcmPlayer", "AudioTrack fallback succeeded: sampleRate=$sr, channelMask=$chan")
+                                break@outer
+                            }
+                        } catch (e: Exception) {
+                            // continue trying
+                        }
+                    }
+                }
+
+                audioTrack = created
+            }
+
+            if (audioTrack == null) {
+                Log.e("PcmPlayer", "Failed to initialize AudioTrack with any fallback configuration")
+                throw IllegalStateException("Could not initialize AudioTrack for playback")
+            }
+
+            audioTrack!!.play()
             _isPlaying.value = true
             _isPaused.value = false
             _currentFile.value = file

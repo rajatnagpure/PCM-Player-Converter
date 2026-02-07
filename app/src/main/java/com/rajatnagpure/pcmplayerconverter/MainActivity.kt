@@ -77,7 +77,8 @@ class MainActivity : ComponentActivity() {
                 // Temporary debug toast for runtime feedback
                 android.widget.Toast.makeText(this, "File received: ${uri.lastPathSegment}", android.widget.Toast.LENGTH_SHORT).show()
                 
-                val encodedUri = URLEncoder.encode(uri.toString(), StandardCharsets.UTF_8.toString())
+                // Use android.net.Uri.encode to produce an encoded parameter compatible with NavController
+                val encodedUri = android.net.Uri.encode(uri.toString())
                 
                 val contentResolver = applicationContext.contentResolver
                 val mimeType = contentResolver.getType(uri) ?: intent?.type
@@ -87,17 +88,19 @@ class MainActivity : ComponentActivity() {
                 val uriString = uri.toString().lowercase()
                 val isPcm = uriString.endsWith(".pcm") || 
                             mimeType?.contains("pcm", ignoreCase = true) == true
-                
-                val isMp3 = uriString.endsWith(".mp3") ||
-                            mimeType?.contains("mp3", ignoreCase = true) == true ||
-                            mimeType?.contains("mpeg", ignoreCase = true) == true
-                
+
+                // Treat other audio types (wav, mp3, m4a, aac, etc.) as generator inputs
+                val audioExtensions = listOf(".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".wma")
+                val isAudioExtension = audioExtensions.any { uriString.endsWith(it) }
+                val isAudioMime = mimeType?.startsWith("audio", ignoreCase = true) == true
+                val isAudio = !isPcm && (isAudioExtension || isAudioMime)
+
                 val route = when {
                     isPcm -> "converter?uri=$encodedUri"
-                    isMp3 -> "generator?uri=$encodedUri"
-                    else -> "converter?uri=$encodedUri" // Default to converter
+                    isAudio -> "generator?uri=$encodedUri"
+                    else -> "generator?uri=$encodedUri" // default to generator for unknown files
                 }
-                
+
                 android.util.Log.d(TAG, "Generated intent route: $route")
                 _intentRouteEvent.value = IntentRouteEvent(route)
             } ?: run {

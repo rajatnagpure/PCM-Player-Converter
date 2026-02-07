@@ -23,6 +23,7 @@ import com.rajatnagpure.pcmplayerconverter.ui.screens.GeneratorScreen
 import com.rajatnagpure.pcmplayerconverter.ui.viewmodel.MainViewModel
 
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import kotlinx.coroutines.flow.first
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,24 +46,32 @@ fun AppNavigation(
                 route != "generator?uri={uri}" &&
                 !route.endsWith("uri=")) {
                 
-                // IMPORTANT: Wait for NavController to be ready with a graph
-                snapshotFlow { navController.graph }.collect { graph ->
-                    if (graph != null) {
-                        try {
-                            android.util.Log.d("AppNavigation", "Graph ready, navigating to: $route")
-                            navController.navigate(route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        } catch (e: Exception) {
-                            android.util.Log.e("AppNavigation", "Navigation error for intent route", e)
+                try {
+                    // Extract base route and uri param if present
+                    val base = route.substringBefore("?")
+                    val encodedParam = route.substringAfter("uri=", "")
+                    // Decode once to ensure ViewModels receive the original URI string
+                    val decodedUri = if (encodedParam.isNotBlank()) android.net.Uri.decode(encodedParam) else null
+
+                    android.util.Log.d("AppNavigation", "Graph ready, navigating to: $route")
+                    navController.navigate(route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
                         }
-                    } else {
-                        android.util.Log.d("AppNavigation", "Waiting for graph to be attached...")
+                        launchSingleTop = true
+                        restoreState = true
                     }
+
+                    // Wait for the back stack entry that matches the destination base route, then write the decoded URI
+                    decodedUri?.let { dUri ->
+                        val entry = navController.currentBackStackEntryFlow.first {
+                            it.destination.route?.substringBefore("?") == base
+                        }
+                        entry.savedStateHandle.set("uri", dUri)
+                        android.util.Log.d("AppNavigation", "Set savedStateHandle uri for $base -> $dUri")
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("AppNavigation", "Navigation error for intent route", e)
                 }
             } else {
                 android.util.Log.d("AppNavigation", "Skipping invalid/placeholder intent route")
@@ -81,9 +90,10 @@ fun AppNavigation(
     val currentRoutePattern = navBackStackEntry?.destination?.route
     val isHelpScreen = currentRoutePattern == "help"
 
-    // Derive selected tab from current route pattern
-    val selectedItem = when {
-        currentRoutePattern?.startsWith("generator") == true -> 1
+    // Derive selected tab from current route base (ignore query params)
+    val currentRouteBase = currentRoutePattern?.substringBefore("?")
+    val selectedItem = when (currentRouteBase) {
+        "generator" -> 1
         else -> 0
     }
 
@@ -164,12 +174,12 @@ fun AppNavigation(
                     composable(
                         route = "converter?uri={uri}",
                         arguments = listOf(navArgument("uri") { type = NavType.StringType; nullable = true })
-                    ) { ConverterScreen() }
+                    ) { backStackEntry -> ConverterScreen(backStackEntry) }
                     
                     composable(
                         route = "generator?uri={uri}",
                         arguments = listOf(navArgument("uri") { type = NavType.StringType; nullable = true })
-                    ) { GeneratorScreen() }
+                    ) { backStackEntry -> GeneratorScreen(backStackEntry) }
 
                     composable("help") { 
                         // Empty composable as it's handled outside the Scaffold

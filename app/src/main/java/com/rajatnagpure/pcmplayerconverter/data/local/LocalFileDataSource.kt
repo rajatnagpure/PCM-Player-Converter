@@ -25,11 +25,30 @@ class LocalFileDataSource @Inject constructor(
     // Ported logic from FileUtils.java to get usable File path or copy to cache
     
     fun getFileFromUri(uri: Uri): File? {
+        // If this is a content URI, prefer copying to cache to avoid storage permission issues
+        if ("content".equals(uri.scheme, ignoreCase = true)) {
+            val cached = getFileFromCache(uri)
+            if (cached != null) return cached
+            // fall through to try path resolution as a last resort
+        }
+
         val path = getPath(context, uri)
         if (path != null) {
-            return File(path)
+            val f = File(path)
+            try {
+                if (f.exists() && f.canRead()) {
+                    return f
+                }
+            } catch (e: Exception) {
+                // ignore and fallback to cache
+            }
         }
-        // Fallback: copy to cache if path resolution fails
+        // Fallback: copy to cache if path resolution fails or file is not readable
+        return getFileFromCache(uri)
+    }
+
+    // Public helper to force copying a URI to app cache (useful when external path access is denied)
+    fun copyUriToCache(uri: Uri): File? {
         return getFileFromCache(uri)
     }
 

@@ -25,6 +25,10 @@ class GeneratorViewModel @Inject constructor(
     private val application: android.app.Application
 ) : ViewModel() {
 
+    // Move UI state declaration before init blocks to ensure it's initialized when collectors run
+    private val _uiState = MutableStateFlow(GeneratorUiState())
+    val uiState: StateFlow<GeneratorUiState> = _uiState.asStateFlow()
+
     init {
         viewModelScope.launch {
             savedStateHandle.getStateFlow("uri", "{uri}").collect { uriStr ->
@@ -47,9 +51,6 @@ class GeneratorViewModel @Inject constructor(
             }
         }
     }
-
-    private val _uiState = MutableStateFlow(GeneratorUiState())
-    val uiState: StateFlow<GeneratorUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {

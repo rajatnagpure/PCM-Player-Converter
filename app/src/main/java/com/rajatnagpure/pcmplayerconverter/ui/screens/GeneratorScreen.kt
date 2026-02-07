@@ -29,6 +29,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.border
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavBackStackEntry
 import com.rajatnagpure.pcmplayerconverter.ui.components.AppButton
 import com.rajatnagpure.pcmplayerconverter.ui.components.AppCard
 import com.rajatnagpure.pcmplayerconverter.ui.components.AppDialog
@@ -36,15 +37,33 @@ import com.rajatnagpure.pcmplayerconverter.ui.components.AudioConfigSelector
 import com.rajatnagpure.pcmplayerconverter.ui.viewmodel.GeneratorViewModel
 import com.rajatnagpure.pcmplayerconverter.ui.theme.GradientStart
 import com.rajatnagpure.pcmplayerconverter.ui.theme.GradientEnd
+import kotlinx.coroutines.flow.collectLatest
 import java.io.File
 
 @Composable
 fun GeneratorScreen(
-    viewModel: GeneratorViewModel = hiltViewModel()
+    backStackEntry: NavBackStackEntry,
+    viewModel: GeneratorViewModel = hiltViewModel(backStackEntry)
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
     val context = LocalContext.current
+
+    // React to nav argument once - ensure we only call when real uri present
+    LaunchedEffect(Unit) {
+        val uriFlow = backStackEntry.savedStateHandle.getStateFlow("uri", "{uri}")
+        uriFlow.collectLatest { uriArg ->
+            if (!uriArg.isNullOrBlank() && uriArg != "{uri}" && uriArg != "null") {
+                try {
+                    val parsed = android.net.Uri.parse(uriArg)
+                    android.util.Log.d("GeneratorScreen", "SavedStateHandle uri: $uriArg -> $parsed")
+                    viewModel.onFileSelectedForConversion(parsed)
+                } catch (e: Exception) {
+                    android.util.Log.e("GeneratorScreen", "Error parsing savedStateHandle uri", e)
+                }
+            }
+        }
+    }
 
     LaunchedEffect(uiState.statusMessage) {
         uiState.statusMessage?.let {

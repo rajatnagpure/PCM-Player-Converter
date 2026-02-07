@@ -28,19 +28,38 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavBackStackEntry
 import com.rajatnagpure.pcmplayerconverter.ui.components.AppButton
 import com.rajatnagpure.pcmplayerconverter.ui.components.AppCard
 import com.rajatnagpure.pcmplayerconverter.ui.components.AudioConfigSelector
 import com.rajatnagpure.pcmplayerconverter.ui.viewmodel.ConverterViewModel
 import com.rajatnagpure.pcmplayerconverter.ui.theme.GradientStart
 import com.rajatnagpure.pcmplayerconverter.ui.theme.GradientEnd
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun ConverterScreen(
-    viewModel: ConverterViewModel = hiltViewModel()
+    backStackEntry: NavBackStackEntry,
+    viewModel: ConverterViewModel = hiltViewModel(backStackEntry)
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
+
+    // React to nav argument once - ensure we only call when real uri present
+    LaunchedEffect(Unit) {
+        val uriFlow = backStackEntry.savedStateHandle.getStateFlow("uri", "{uri}")
+        uriFlow.collectLatest { uriArg ->
+            if (!uriArg.isNullOrBlank() && uriArg != "{uri}" && uriArg != "null") {
+                try {
+                    val parsed = Uri.parse(uriArg)
+                    android.util.Log.d("ConverterScreen", "SavedStateHandle uri: $uriArg -> $parsed")
+                    viewModel.onFileSelected(parsed)
+                } catch (e: Exception) {
+                    android.util.Log.e("ConverterScreen", "Error parsing savedStateHandle uri", e)
+                }
+            }
+        }
+    }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
