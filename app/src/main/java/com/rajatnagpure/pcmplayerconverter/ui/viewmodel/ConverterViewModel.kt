@@ -33,24 +33,36 @@ class ConverterViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             savedStateHandle.getStateFlow("uri", "{uri}").collect { uriStr ->
-                if (uriStr.isNotEmpty() && uriStr != "{uri}" && uriStr != "null") {
+                android.util.Log.d("ConverterViewModel", "Received URI from SavedStateHandle: $uriStr")
+                
+                if (uriStr.isNotBlank() && uriStr != "{uri}" && uriStr != "null") {
                     try {
-                        val decodedUri = Uri.parse(uriStr)
-                        onFileSelected(decodedUri)
+                        // Navigation system already decodes parameters in the route pattern.
+                        // uriStr contains the original URI string.
+                        val uri = Uri.parse(uriStr)
+                        android.util.Log.d("ConverterViewModel", "Parsed URI: $uri")
+                        
+                        onFileSelected(uri)
                     } catch (e: Exception) {
+                        android.util.Log.e("ConverterViewModel", "Error parsing URI: $uriStr", e)
                         _uiState.value = _uiState.value.copy(errorMessage = "Error opening shared file")
                     }
+                } else {
+                    android.util.Log.d("ConverterViewModel", "Skipping placeholder/null/blank URI")
                 }
             }
         }
     }
 
     fun onFileSelected(uri: Uri) {
+        android.util.Log.d("ConverterViewModel", "onFileSelected called with URI: $uri")
         viewModelScope.launch {
             val file = localFileDataSource.getFileFromUri(uri)
             if (file != null) {
+                android.util.Log.d("ConverterViewModel", "File loaded successfully: ${file.name}")
                 _uiState.value = _uiState.value.copy(selectedFile = file, errorMessage = null)
             } else {
+                android.util.Log.e("ConverterViewModel", "Failed to load file from URI")
                 _uiState.value = _uiState.value.copy(errorMessage = "Failed to load file")
             }
         }

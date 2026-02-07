@@ -28,13 +28,21 @@ class GeneratorViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             savedStateHandle.getStateFlow("uri", "{uri}").collect { uriStr ->
-                if (uriStr.isNotEmpty() && uriStr != "{uri}" && uriStr != "null") {
+                android.util.Log.d("GeneratorViewModel", "Received URI from SavedStateHandle: $uriStr")
+                
+                if (uriStr.isNotBlank() && uriStr != "{uri}" && uriStr != "null") {
                     try {
-                        val decodedUri = Uri.parse(uriStr)
-                        onFileSelectedForConversion(decodedUri)
+                        // Navigation system already decodes parameters in the route pattern.
+                        val uri = android.net.Uri.parse(uriStr)
+                        android.util.Log.d("GeneratorViewModel", "Parsed URI: $uri")
+                        
+                        onFileSelectedForConversion(uri)
                     } catch (e: Exception) {
+                        android.util.Log.e("GeneratorViewModel", "Error parsing URI: $uriStr", e)
                         _uiState.value = _uiState.value.copy(errorMessage = "Error opening shared file")
                     }
+                } else {
+                    android.util.Log.d("GeneratorViewModel", "Skipping placeholder/null/blank URI")
                 }
             }
         }
@@ -82,11 +90,14 @@ class GeneratorViewModel @Inject constructor(
     }
 
     fun onFileSelectedForConversion(uri: Uri) {
-         viewModelScope.launch {
+        android.util.Log.d("GeneratorViewModel", "onFileSelectedForConversion called with URI: $uri")
+        viewModelScope.launch {
             val file = localFileDataSource.getFileFromUri(uri)
             if (file != null) {
+                android.util.Log.d("GeneratorViewModel", "File loaded successfully: ${file.name}")
                 _uiState.value = _uiState.value.copy(selectedFileToConvert = file, errorMessage = null)
             } else {
+                android.util.Log.e("GeneratorViewModel", "Failed to load file from URI")
                 _uiState.value = _uiState.value.copy(errorMessage = "Failed to load file")
             }
         }

@@ -1,6 +1,7 @@
 package com.rajatnagpure.pcmplayerconverter
 
 import android.content.Intent
+import android.util.Log
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -28,7 +29,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        processIntent(intent)
         
         setContent {
             PCMPlayerConverterTheme {
@@ -36,10 +36,15 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation(intentRouteEvent = _intentRouteEvent.value)
+                    // Observe the custom state properly
+                    val event = _intentRouteEvent.value
+                    AppNavigation(intentRouteEvent = event)
                 }
             }
         }
+        
+        // Process initial intent after setContent so navigation components are ready
+        processIntent(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -49,30 +54,65 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun processIntent(intent: Intent?) {
-        val intentUri = if (intent?.action == Intent.ACTION_SEND) {
-            intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
-        } else if (intent?.action == Intent.ACTION_VIEW) {
-            intent.data
-        } else {
-            null
-        }
-
-        intentUri?.let { it ->
-            val encodedUri = URLEncoder.encode(it.toString(), StandardCharsets.UTF_8.toString())
+        try {
+            val action = intent?.action
+            Log.d(TAG, "Processing intent: action=$action")
             
-            val contentResolver = applicationContext.contentResolver
-            val type = contentResolver.getType(it) ?: intent?.type
-            
-            val isPcm = type?.contains("pcm") == true || 
-                        it.toString().lowercase().contains(".pcm") ||
-                        (type == "application/octet-stream")
-            
-            val route = if (isPcm) {
-                "converter?uri=$encodedUri"
-            } else {
-                "generator?uri=$encodedUri"
+            val intentUri = when (action) {
+                Intent.ACTION_SEND -> {
+                    // Modern Android often puts the URI in ClipData
+                    intent.clipData?.let { clipData ->
+                        if (clipData.itemCount > 0) {
+                            clipData.getItemAt(0).uri
+                        } else null
+                    } ?: intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+                }
+                Intent.ACTION_VIEW -> intent.data
+                else -> null
             }
-            _intentRouteEvent.value = IntentRouteEvent(route)
+
+            intentUri?.let { uri ->
+                Log.d(TAG, "Intent URI found: $uri")
+                
+                // Temporary debug toast for runtime feedback
+                android.widget.Toast.makeText(this, "File received: ${uri.lastPathSegment}", android.widget.Toast.LENGTH_SHORT).show()
+                
+                val encodedUri = URLEncoder.encode(uri.toString(), StandardCharsets.UTF_8.toString())
+                
+                val contentResolver = applicationContext.contentResolver
+                val mimeType = contentResolver.getType(uri) ?: intent?.type
+                Log.d(TAG, "MIME type: $mimeType")
+                
+                // Determine file type - prioritize file extension over MIME type
+                val uriString = uri.toString().lowercase()
+                val isPcm = uriString.endsWith(".pcm") || 
+                            mimeType?.contains("pcm", ignoreCase = true) == true
+                
+                val isMp3 = uriString.endsWith(".mp3") ||
+                            mimeType?.contains("mp3", ignoreCase = true) == true ||
+                            mimeType?.contains("mpeg", ignoreCase = true) == true
+                
+                val route = when {
+                    isPcm -> "converter?uri=$encodedUri"
+                    isMp3 -> "generator?uri=$encodedUri"
+                    else -> "converter?uri=$encodedUri" // Default to converter
+                }
+                
+                android.util.Log.d(TAG, "Generated intent route: $route")
+                _intentRouteEvent.value = IntentRouteEvent(route)
+            } ?: run {
+                Log.d(TAG, "No URI found in intent")
+                if (action == Intent.ACTION_SEND || action == Intent.ACTION_VIEW) {
+                    android.widget.Toast.makeText(this, "Could not reveal file in intent", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error processing intent", e)
+            android.widget.Toast.makeText(this, "Error processing shared file", android.widget.Toast.LENGTH_SHORT).show()
         }
+    }
+    
+    companion object {
+        private const val TAG = "MainActivity"
     }
 }

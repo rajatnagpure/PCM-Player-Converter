@@ -31,21 +31,41 @@ fun AppNavigation(
     mainViewModel: MainViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
-    var selectedItem by rememberSaveable { mutableStateOf(0) }
     
     // Handle intent routing reactively
     LaunchedEffect(intentRouteEvent) {
+        android.util.Log.d("AppNavigation", "LaunchedEffect triggered with event: $intentRouteEvent")
         intentRouteEvent?.let { event ->
             val route = event.route
-            if (route.isNotEmpty() && route != "converter?uri={uri}") {
-                selectedItem = if (route.contains("generator")) 1 else 0
-                navController.navigate(route) {
-                    popUpTo(navController.graph.findStartDestination().id) {
-                        saveState = true
+            android.util.Log.d("AppNavigation", "Processing intent route: $route")
+            
+            // Validate route
+            if (route.isNotBlank() && 
+                route != "converter?uri={uri}" && 
+                route != "generator?uri={uri}" &&
+                !route.endsWith("uri=")) {
+                
+                // IMPORTANT: Wait for NavController to be ready with a graph
+                snapshotFlow { navController.graph }.collect { graph ->
+                    if (graph != null) {
+                        try {
+                            android.util.Log.d("AppNavigation", "Graph ready, navigating to: $route")
+                            navController.navigate(route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        } catch (e: Exception) {
+                            android.util.Log.e("AppNavigation", "Navigation error for intent route", e)
+                        }
+                    } else {
+                        android.util.Log.d("AppNavigation", "Waiting for graph to be attached...")
                     }
-                    launchSingleTop = true
-                    restoreState = true
                 }
+            } else {
+                android.util.Log.d("AppNavigation", "Skipping invalid/placeholder intent route")
             }
         }
     }
@@ -56,104 +76,118 @@ fun AppNavigation(
     val currentFile by mainViewModel.currentFile.collectAsState()
     val progress by mainViewModel.progress.collectAsState()
     
-    val items = listOf("Converter", "Generator")
-    val icons = listOf(Icons.Filled.Audiotrack, Icons.Filled.GraphicEq)
+    // Get current route to determine if we should show the full-screen Help page
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoutePattern = navBackStackEntry?.destination?.route
+    val isHelpScreen = currentRoutePattern == "help"
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("PCM Converter") },
-                actions = {
-                    IconButton(onClick = { navController.navigate("help") }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.HelpOutline, 
-                            contentDescription = "Help",
-                            tint = MaterialTheme.colorScheme.onPrimary
+    // Derive selected tab from current route pattern
+    val selectedItem = when {
+        currentRoutePattern?.startsWith("generator") == true -> 1
+        else -> 0
+    }
+
+    if (isHelpScreen) {
+        com.rajatnagpure.pcmplayerconverter.ui.NeedHelpScreen(
+            onBackClick = { navController.popBackStack() }
+        )
+    } else {
+        val items = listOf("Converter", "Generator")
+        val icons = listOf(Icons.Filled.Audiotrack, Icons.Filled.GraphicEq)
+
+        Scaffold(
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = { Text("PCM Converter") },
+                    actions = {
+                        IconButton(onClick = { navController.navigate("help") }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.HelpOutline, 
+                                contentDescription = "Help",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        scrolledContainerColor = MaterialTheme.colorScheme.primary,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier.shadow(0.5.dp)
+                )
+            },
+            bottomBar = {
+                NavigationBar {
+                    items.forEachIndexed { index, item ->
+                        NavigationBarItem(
+                            icon = { Icon(icons[index], contentDescription = item) },
+                            label = { Text(item) },
+                            selected = selectedItem == index,
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.primary
+                            ),
+                            onClick = {
+                                if (selectedItem != index) {
+                                    // Try to get current uri to persist it when switching tabs
+                                    val currentUri = navBackStackEntry?.arguments?.getString("uri")
+                                    
+                                    val route = if (index == 0) {
+                                        if (!currentUri.isNullOrBlank() && currentUri != "{uri}" && currentUri != "null") "converter?uri=$currentUri" else "converter?uri={uri}"
+                                    } else {
+                                        if (!currentUri.isNullOrBlank() && currentUri != "{uri}" && currentUri != "null") "generator?uri=$currentUri" else "generator?uri={uri}"
+                                    }
+                                    
+                                    navController.navigate(route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
+                            }
                         )
                     }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    scrolledContainerColor = MaterialTheme.colorScheme.primary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                modifier = Modifier.shadow(0.5.dp)
-            )
-        },
-        bottomBar = {
-            NavigationBar {
-                items.forEachIndexed { index, item ->
-                    NavigationBarItem(
-                        icon = { Icon(icons[index], contentDescription = item) },
-                        label = { Text(item) },
-                        selected = selectedItem == index,
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.onPrimary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                            indicatorColor = MaterialTheme.colorScheme.primary
-                        ),
-                        onClick = {
-                            selectedItem = index
-                            
-                            // Try to get uri from the current screen's SavedStateHandle via its backStackEntry
-                            val currentBackStackEntry = navController.currentBackStackEntry
-                            val currentUri = currentBackStackEntry?.arguments?.getString("uri")
-                            
-                            val route = if (index == 0) {
-                                if (currentUri != null && currentUri != "{uri}" && currentUri != "null") "converter?uri=$currentUri" else "converter?uri={uri}"
-                            } else {
-                                if (currentUri != null && currentUri != "{uri}" && currentUri != "null") "generator?uri=$currentUri" else "generator?uri={uri}"
-                            }
-                            
-                            navController.navigate(route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
-                    )
                 }
             }
-        }
-    ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
-            NavHost(
-                navController = navController,
-                startDestination = "converter?uri={uri}",
-                modifier = Modifier.padding(innerPadding)
-            ) {
-                composable(
-                    route = "converter?uri={uri}",
-                    arguments = listOf(navArgument("uri") { type = NavType.StringType; nullable = true })
-                ) { ConverterScreen() }
-                
-                composable(
-                    route = "generator?uri={uri}",
-                    arguments = listOf(navArgument("uri") { type = NavType.StringType; nullable = true })
-                ) { GeneratorScreen() }
+        ) { innerPadding ->
+            Box(modifier = Modifier.fillMaxSize()) {
+                NavHost(
+                    navController = navController,
+                    startDestination = "converter?uri={uri}",
+                    modifier = Modifier.padding(innerPadding)
+                ) {
+                    composable(
+                        route = "converter?uri={uri}",
+                        arguments = listOf(navArgument("uri") { type = NavType.StringType; nullable = true })
+                    ) { ConverterScreen() }
+                    
+                    composable(
+                        route = "generator?uri={uri}",
+                        arguments = listOf(navArgument("uri") { type = NavType.StringType; nullable = true })
+                    ) { GeneratorScreen() }
 
-                composable("help") { 
-                    com.rajatnagpure.pcmplayerconverter.ui.NeedHelpScreen(
-                        onBackClick = { navController.popBackStack() }
-                    ) 
+                    composable("help") { 
+                        // Empty composable as it's handled outside the Scaffold
+                    }
                 }
-            }
-            
-            if (isPlayerVisible && currentFile != null) {
-                Dialog(onDismissRequest = { mainViewModel.dismissPlayer() }) {
-                    AudioPlayerSheet(
-                        file = currentFile,
-                        progress = progress,
-                        isPlaying = isPlaying,
-                        isPaused = isPaused,
-                        onProgressChange = { mainViewModel.seekTo(it) },
-                        onTogglePlayback = { mainViewModel.togglePlayback() },
-                        onDismiss = { mainViewModel.dismissPlayer() }
-                    )
+                
+                if (isPlayerVisible && currentFile != null) {
+                    Dialog(onDismissRequest = { mainViewModel.dismissPlayer() }) {
+                        AudioPlayerSheet(
+                            file = currentFile,
+                            progress = progress,
+                            isPlaying = isPlaying,
+                            isPaused = isPaused,
+                            onProgressChange = { mainViewModel.seekTo(it) },
+                            onTogglePlayback = { mainViewModel.togglePlayback() },
+                            onDismiss = { mainViewModel.dismissPlayer() }
+                        )
+                    }
                 }
             }
         }
