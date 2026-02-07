@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.GraphicEq
-import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -49,7 +49,7 @@ fun AppNavigation(
         }
     }
 
-    val isPlaying by mainViewModel.isPlaying.collectAsState()
+    val isPlayerVisible by mainViewModel.isPlayerVisible.collectAsState()
     val currentFile by mainViewModel.currentFile.collectAsState()
     val progress by mainViewModel.progress.collectAsState()
     
@@ -63,7 +63,7 @@ fun AppNavigation(
                 actions = {
                     IconButton(onClick = { navController.navigate("help") }) {
                         Icon(
-                            imageVector = Icons.Default.HelpOutline, 
+                            imageVector = Icons.AutoMirrored.Filled.HelpOutline, 
                             contentDescription = "Help",
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
@@ -141,7 +141,7 @@ fun AppNavigation(
             }
             
             AnimatedVisibility(
-                visible = isPlaying && currentFile != null,
+                visible = isPlayerVisible && currentFile != null,
                 enter = slideInVertically { it },
                 exit = slideOutVertically { it },
                 modifier = Modifier
@@ -150,10 +150,10 @@ fun AppNavigation(
             ) {
                 AudioPlayerSheet(
                     file = currentFile,
-                    isPlaying = isPlaying,
                     progress = progress,
                     onProgressChange = { mainViewModel.seekTo(it) },
-                    onStop = { mainViewModel.stopPlayback() }
+                    onStop = { mainViewModel.stopPlayback() },
+                    onDismiss = { mainViewModel.dismissPlayer() }
                 )
             }
         }

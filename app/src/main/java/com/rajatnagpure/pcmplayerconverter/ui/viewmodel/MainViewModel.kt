@@ -9,11 +9,17 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val pcmPlayer: PcmPlayer
 ) : ViewModel() {
+
+    private val _isPlayerVisible = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val isPlayerVisible: StateFlow<Boolean> = _isPlayerVisible.asStateFlow()
 
     val isPlaying: StateFlow<Boolean> = pcmPlayer.isPlayingFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -23,6 +29,22 @@ class MainViewModel @Inject constructor(
 
     val progress: StateFlow<Float> = pcmPlayer.progressFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0f)
+
+    init {
+        // Automatically show player when a file starts playing
+        viewModelScope.launch {
+            pcmPlayer.isPlayingFlow.collect { playing ->
+                if (playing) {
+                    _isPlayerVisible.value = true
+                }
+            }
+        }
+    }
+
+    fun dismissPlayer() {
+        _isPlayerVisible.value = false
+        stopPlayback()
+    }
 
     fun stopPlayback() {
         pcmPlayer.stop()

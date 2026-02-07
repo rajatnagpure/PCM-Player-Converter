@@ -25,10 +25,10 @@ import java.io.File
 @Composable
 fun AudioPlayerSheet(
     file: File?,
-    isPlaying: Boolean,
     progress: Float,
     onProgressChange: (Float) -> Unit,
     onStop: () -> Unit,
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (file == null) return
@@ -77,13 +77,24 @@ fun AudioPlayerSheet(
                     )
                 }
                 
-                IconButton(onClick = onStop) {
-                    Icon(
-                        imageVector = Icons.Default.Stop,
-                        contentDescription = "Stop",
-                        tint = DarkBlue,
-                        modifier = Modifier.size(32.dp)
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onStop) {
+                        Icon(
+                            imageVector = Icons.Default.Stop,
+                            contentDescription = "Stop",
+                            tint = DarkBlue,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                    
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Dismiss",
+                            tint = DarkBlue,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
             }
             
