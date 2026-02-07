@@ -2,7 +2,7 @@ package com.rajatnagpure.pcmplayerconverter
 
 import android.media.AudioFormat
 
-object Constants {
+object  Constants {
     const val RECORDER_SAMPLERATE = 8000
     const val RECORDER_CHANNELS: Int = AudioFormat.CHANNEL_IN_MONO
     const val RECORDER_AUDIO_ENCODING: Int = AudioFormat.ENCODING_PCM_16BIT

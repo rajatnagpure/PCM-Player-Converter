@@ -11,8 +11,11 @@
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <application
+        android:name=".BaseApplication"
         android:requestLegacyExternalStorage="true"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -21,7 +24,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PCMPlayerConverter">
         <activity android:name="com.rajatnagpure.pcmplayerconverter.NeedHelp" />
-        <activity android:name="com.rajatnagpure.pcmplayerconverter.MusicPlayer" />
         <activity android:name="com.rajatnagpure.pcmplayerconverter.MainActivity"
             android:exported="true">
             <meta-data
@@ -38,9 +40,17 @@
 
                 <category android:name="android.intent.category.DEFAULT" />
 
+                <data android:mimeType="audio/*" />
+                <data android:mimeType="application/octet-stream" />
                 <data android:mimeType="*/*" />
             </intent-filter>
         </activity>
+
+        
+        <service 
+            android:name=".service.ConversionService" 
+            android:foregroundServiceType="dataSync" 
+            android:exported="false" />
     </application>
 
 </manifest>
