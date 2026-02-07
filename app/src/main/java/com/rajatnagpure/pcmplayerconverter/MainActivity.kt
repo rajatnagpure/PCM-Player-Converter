@@ -20,52 +20,59 @@ import java.nio.charset.StandardCharsets
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    
+    // Data class to ensure every intent triggers a LaunchedEffect, even if the route is same
+    data class IntentRouteEvent(val route: String, val timestamp: Long = System.currentTimeMillis())
+    
+    private val _intentRouteEvent = androidx.compose.runtime.mutableStateOf<IntentRouteEvent?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        processIntent(intent)
+        
         setContent {
             PCMPlayerConverterTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val navController = rememberNavController()
-                    
-
-                    // We need to modify AppNavigation to accept navController or move Intent handling there.
-                    // But AppNavigation creates its own navController.
-                    // Let's modify AppNavigation to accept navController or handle intent internally?
-                    // Simpler: Just Copy AppNavigation content here or modify AppNavigation.
-                    // For now, I will use a slightly modified AppNavigation that accepts a navController,
-                    // OR I will just rely on the fact that for a fresh start, I can't easily push to the internal navController of AppNavigation from here.
-                    // ACTUALLY, AppNavigation creates `rememberNavController`.
-                    // I should pass it `startDestination` with arguments if intent exists?
-                    // Better: Modify AppNavigation to take `intentUri`?
-                    
-                    // Let's pass the intent URI to AppNavigation if strictly needed, 
-                    // but simpler is to handle it inside AppNavigation or pass the controller.
-                    // I will change AppNavigation to take `navController` as parameter or just `startDestination`.
-                    
-                    // Let's stick to the current AppNavigation which instantiates its own controller.
-                    // It makes external navigation hard.
-                    // I'll update AppNavigation to accept `navController`.
-                    
-                    // Initial URI from Intent
-                    var startDestination = "converter"
-                    if (intent?.action == Intent.ACTION_SEND) {
-                         val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
-                         val mimeType = intent.type
-                         
-                         uri?.let {
-                             val encodedUri = URLEncoder.encode(it.toString(), StandardCharsets.UTF_8.toString())
-                             // Route logic: pcm -> converter, others -> generator
-                             val isPcm = mimeType?.contains("pcm") == true || it.toString().lowercase().endsWith(".pcm")
-                             startDestination = if (isPcm) "converter?uri=$encodedUri" else "generator?uri=$encodedUri"
-                         }
-                    }
-                    
-                    AppNavigation(startDestination = startDestination)
+                    AppNavigation(intentRouteEvent = _intentRouteEvent.value)
                 }
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        processIntent(intent)
+    }
+
+    private fun processIntent(intent: Intent?) {
+        val intentUri = if (intent?.action == Intent.ACTION_SEND) {
+            intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+        } else if (intent?.action == Intent.ACTION_VIEW) {
+            intent.data
+        } else {
+            null
+        }
+
+        intentUri?.let { it ->
+            val encodedUri = URLEncoder.encode(it.toString(), StandardCharsets.UTF_8.toString())
+            
+            val contentResolver = applicationContext.contentResolver
+            val type = contentResolver.getType(it) ?: intent?.type
+            
+            val isPcm = type?.contains("pcm") == true || 
+                        it.toString().lowercase().contains(".pcm") ||
+                        (type == "application/octet-stream")
+            
+            val route = if (isPcm) {
+                "converter?uri=$encodedUri"
+            } else {
+                "generator?uri=$encodedUri"
+            }
+            _intentRouteEvent.value = IntentRouteEvent(route)
         }
     }
 }

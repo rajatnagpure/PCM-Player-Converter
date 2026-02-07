@@ -34,11 +34,23 @@ class LocalFileDataSource @Inject constructor(
     }
 
     private fun getFileFromCache(uri: Uri): File? {
-        val returnCursor = context.contentResolver.query(uri, null, null, null, null) ?: return null
-        val nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-        returnCursor.moveToFirst()
-        val name = returnCursor.getString(nameIndex)
-        returnCursor.close()
+        var name = "temp_audio_file"
+        try {
+            val returnCursor = context.contentResolver.query(uri, null, null, null, null)
+            returnCursor?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (nameIndex != -1) {
+                        val fileName = cursor.getString(nameIndex)
+                        if (!fileName.isNullOrEmpty()) {
+                            name = fileName
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
         
         val file = File(context.cacheDir, name)
         try {

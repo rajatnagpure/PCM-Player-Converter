@@ -2,7 +2,7 @@ package com.rajatnagpure.pcmplayerconverter.data.repository
 
 import com.rajatnagpure.pcmplayerconverter.data.audio.PcmPlayer
 import com.rajatnagpure.pcmplayerconverter.data.audio.PcmRecorder
-import com.rajatnagpure.pcmplayerconverter.data.converter.AacEncoder
+import com.rajatnagpure.pcmplayerconverter.data.converter.AudioEncoder
 import com.rajatnagpure.pcmplayerconverter.data.converter.AudioDecoder
 import com.rajatnagpure.pcmplayerconverter.data.converter.PcmConverter
 import com.rajatnagpure.pcmplayerconverter.domain.model.AudioConfig
@@ -20,15 +20,15 @@ import org.junit.Test
 class AudioRepositoryTest {
 
     private lateinit var repository: AudioRepositoryImpl
-    private val pcmConverter: PcmConverter = mockk()
-    private val aacEncoder: AacEncoder = mockk()
-    private val audioDecoder: AudioDecoder = mockk()
-    private val pcmPlayer: PcmPlayer = mockk(relaxed = true)
-    private val pcmRecorder: PcmRecorder = mockk(relaxed = true)
+    private val pcmConverter = mockk<PcmConverter>()
+    private val audioEncoder = mockk<AudioEncoder>()
+    private val audioDecoder = mockk<AudioDecoder>()
+    private val pcmPlayer = mockk<PcmPlayer>(relaxed = true)
+    private val pcmRecorder = mockk<PcmRecorder>(relaxed = true)
 
     @Before
     fun setup() {
-        repository = AudioRepositoryImpl(pcmConverter, aacEncoder, audioDecoder, pcmPlayer, pcmRecorder)
+        repository = AudioRepositoryImpl(pcmConverter, audioEncoder, audioDecoder, pcmPlayer, pcmRecorder)
     }
 
     @Test
@@ -47,25 +47,25 @@ class AudioRepositoryTest {
         // Assert
         assertTrue(result.isSuccess)
         verify { pcmConverter.rawToWave(config, pcmFile, wavFile) }
-        verify(exactly = 0) { aacEncoder.encodeToM4a(any(), any(), any()) }
+        verify(exactly = 0) { audioEncoder.encode(any(), any(), any()) }
     }
 
     @Test
-    fun `convertPcm uses AacEncoder when format is M4A`() = runTest {
+    fun `convertPcm uses AudioEncoder when format is M4A`() = runTest {
         // Arrange
         val pcmFile = mockk<File>()
         val m4aFile = mockk<File>()
         val config = AudioConfig(outputFormat = com.rajatnagpure.pcmplayerconverter.domain.model.AudioOutputFormat.M4A)
         
         every { pcmFile.exists() } returns true
-        every { aacEncoder.encodeToM4a(config, pcmFile, m4aFile) } returns m4aFile
-
+        every { audioEncoder.encode(config, pcmFile, m4aFile) } returns m4aFile
+ 
         // Act
         val result = repository.convertPcm(pcmFile, m4aFile, config)
-
+ 
         // Assert
         assertTrue(result.isSuccess)
-        verify { aacEncoder.encodeToM4a(config, pcmFile, m4aFile) }
+        verify { audioEncoder.encode(config, pcmFile, m4aFile) }
         verify(exactly = 0) { pcmConverter.rawToWave(any(), any(), any()) }
     }
     

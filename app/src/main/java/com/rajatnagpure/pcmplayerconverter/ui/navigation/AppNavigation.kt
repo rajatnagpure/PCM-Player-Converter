@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -25,16 +26,27 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavigation(
-    startDestination: String = "converter?uri={uri}",
+    intentRouteEvent: com.rajatnagpure.pcmplayerconverter.MainActivity.IntentRouteEvent? = null,
     mainViewModel: MainViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
-    var selectedItem by rememberSaveable { 
-        mutableStateOf(if (startDestination.startsWith("generator")) 1 else 0) 
-    }
+    var selectedItem by rememberSaveable { mutableStateOf(0) }
     
-    LaunchedEffect(startDestination) {
-        selectedItem = if (startDestination.startsWith("generator")) 1 else 0
+    // Handle intent routing reactively
+    LaunchedEffect(intentRouteEvent) {
+        intentRouteEvent?.let { event ->
+            val route = event.route
+            if (route.isNotEmpty() && route != "converter?uri={uri}") {
+                selectedItem = if (route.contains("generator")) 1 else 0
+                navController.navigate(route) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
+        }
     }
 
     val isPlaying by mainViewModel.isPlaying.collectAsState()
@@ -48,11 +60,23 @@ fun AppNavigation(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("PCM Converter") },
+                actions = {
+                    IconButton(onClick = { navController.navigate("help") }) {
+                        Icon(
+                            imageVector = Icons.Default.HelpOutline, 
+                            contentDescription = "Help",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                    scrolledContainerColor = MaterialTheme.colorScheme.primary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                 ),
-                modifier = Modifier.shadow(8.dp)
+                modifier = Modifier.shadow(0.5.dp)
             )
         },
         bottomBar = {
@@ -62,9 +86,24 @@ fun AppNavigation(
                         icon = { Icon(icons[index], contentDescription = item) },
                         label = { Text(item) },
                         selected = selectedItem == index,
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            indicatorColor = MaterialTheme.colorScheme.primary
+                        ),
                         onClick = {
                             selectedItem = index
-                            val route = if (index == 0) "converter?uri={uri}" else "generator?uri={uri}"
+                            
+                            // Try to get uri from the current screen's SavedStateHandle via its backStackEntry
+                            val currentBackStackEntry = navController.currentBackStackEntry
+                            val currentUri = currentBackStackEntry?.arguments?.getString("uri")
+                            
+                            val route = if (index == 0) {
+                                if (currentUri != null && currentUri != "{uri}" && currentUri != "null") "converter?uri=$currentUri" else "converter?uri={uri}"
+                            } else {
+                                if (currentUri != null && currentUri != "{uri}" && currentUri != "null") "generator?uri=$currentUri" else "generator?uri={uri}"
+                            }
+                            
                             navController.navigate(route) {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
@@ -81,7 +120,7 @@ fun AppNavigation(
         Box(modifier = Modifier.fillMaxSize()) {
             NavHost(
                 navController = navController,
-                startDestination = "converter?uri={uri}", // Use argument-based route as start
+                startDestination = "converter?uri={uri}",
                 modifier = Modifier.padding(innerPadding)
             ) {
                 composable(
@@ -93,6 +132,12 @@ fun AppNavigation(
                     route = "generator?uri={uri}",
                     arguments = listOf(navArgument("uri") { type = NavType.StringType; nullable = true })
                 ) { GeneratorScreen() }
+
+                composable("help") { 
+                    com.rajatnagpure.pcmplayerconverter.ui.NeedHelpScreen(
+                        onBackClick = { navController.popBackStack() }
+                    ) 
+                }
             }
             
             AnimatedVisibility(

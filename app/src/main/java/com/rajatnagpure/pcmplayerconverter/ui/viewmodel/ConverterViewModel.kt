@@ -31,9 +31,16 @@ class ConverterViewModel @Inject constructor(
     val uiState: StateFlow<ConverterUiState> = _uiState.asStateFlow()
 
     init {
-        savedStateHandle.get<String>("uri")?.let { uriString ->
-            if (uriString.isNotEmpty()) {
-                onFileSelected(Uri.parse(uriString))
+        viewModelScope.launch {
+            savedStateHandle.getStateFlow("uri", "{uri}").collect { uriStr ->
+                if (uriStr.isNotEmpty() && uriStr != "{uri}" && uriStr != "null") {
+                    try {
+                        val decodedUri = Uri.parse(uriStr)
+                        onFileSelected(decodedUri)
+                    } catch (e: Exception) {
+                        _uiState.value = _uiState.value.copy(errorMessage = "Error opening shared file")
+                    }
+                }
             }
         }
     }
@@ -53,12 +60,24 @@ class ConverterViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(audioConfig = config)
     }
 
-    fun convertToWav() {
+    fun requestSaveFileName() {
+        val file = _uiState.value.selectedFile ?: return
+        val config = _uiState.value.audioConfig
+        val defaultName = "${file.nameWithoutExtension}.${config.outputFormat.extension}"
+        _uiState.value = _uiState.value.copy(showSaveDialog = true, suggestedFileName = defaultName)
+    }
+
+    fun cancelSave() {
+        _uiState.value = _uiState.value.copy(showSaveDialog = false)
+    }
+
+    fun convertToFormat(fileName: String) {
         val inFile = _uiState.value.selectedFile ?: return
         val config = _uiState.value.audioConfig
-        val extension = config.outputFormat.extension
-        val outFile = File(inFile.parent, "${inFile.nameWithoutExtension}.$extension")
+        _uiState.value = _uiState.value.copy(showSaveDialog = false, isConverting = true)
 
+        val outFile = File(inFile.parent, fileName)
+        
         val intent = Intent(application, com.rajatnagpure.pcmplayerconverter.service.ConversionService::class.java).apply {
             putExtra("inFile", inFile)
             putExtra("outFile", outFile)
@@ -72,6 +91,7 @@ class ConverterViewModel @Inject constructor(
         }
         
         _uiState.value = _uiState.value.copy(conversionMessage = "Conversion started in background...")
+        android.widget.Toast.makeText(application, "Saving to ${outFile.name}...", android.widget.Toast.LENGTH_SHORT).show()
     }
 
     fun togglePlay() {
@@ -101,5 +121,7 @@ data class ConverterUiState(
     val isConverting: Boolean = false,
     val isPlaying: Boolean = false,
     val errorMessage: String? = null,
-    val conversionMessage: String? = null
+    val conversionMessage: String? = null,
+    val showSaveDialog: Boolean = false,
+    val suggestedFileName: String = ""
 )

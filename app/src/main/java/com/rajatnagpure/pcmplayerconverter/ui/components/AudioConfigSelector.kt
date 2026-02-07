@@ -103,11 +103,18 @@ fun DropdownSelector(
         OutlinedTextField(
             value = selectedOption,
             onValueChange = {},
-            label = { Text(label) },
+            label = { Text(label, color = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue) },
             readOnly = true,
             trailingIcon = {
-                Icon(Icons.Default.ArrowDropDown, "Dropdown")
+                Icon(Icons.Default.ArrowDropDown, "Dropdown", tint = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue)
             },
+            colors = androidx.compose.material3.TextFieldDefaults.outlinedTextFieldColors(
+                focusedBorderColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue,
+                unfocusedBorderColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue.copy(alpha = 0.5f),
+                focusedLabelColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue,
+                unfocusedLabelColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue.copy(alpha = 0.7f)
+            ),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
             modifier = Modifier.fillMaxWidth()
         )
         // Invisible clickable surface

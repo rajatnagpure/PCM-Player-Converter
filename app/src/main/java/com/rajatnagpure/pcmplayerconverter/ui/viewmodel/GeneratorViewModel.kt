@@ -21,19 +21,21 @@ class GeneratorViewModel @Inject constructor(
     private val recordAudioUseCase: RecordAudioUseCase,
     private val convertAudioToPcmUseCase: ConvertAudioToPcmUseCase,
     private val localFileDataSource: LocalFileDataSource,
-    savedStateHandle: androidx.lifecycle.SavedStateHandle
+    savedStateHandle: androidx.lifecycle.SavedStateHandle,
+    private val application: android.app.Application
 ) : ViewModel() {
 
     init {
-        savedStateHandle.get<String>("uri")?.let { uriStr ->
-            try {
-                val uri = Uri.parse(java.net.URLDecoder.decode(uriStr, "UTF-8"))
-                val file = localFileDataSource.getFileFromUri(uri)
-                if (file != null) {
-                    _uiState.value = _uiState.value.copy(selectedFileToConvert = file)
+        viewModelScope.launch {
+            savedStateHandle.getStateFlow("uri", "{uri}").collect { uriStr ->
+                if (uriStr.isNotEmpty() && uriStr != "{uri}" && uriStr != "null") {
+                    try {
+                        val decodedUri = Uri.parse(uriStr)
+                        onFileSelectedForConversion(decodedUri)
+                    } catch (e: Exception) {
+                        _uiState.value = _uiState.value.copy(errorMessage = "Error opening shared file")
+                    }
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
         }
     }
@@ -58,15 +60,18 @@ class GeneratorViewModel @Inject constructor(
         viewModelScope.launch {
             if (_uiState.value.isRecording) {
                 recordAudioUseCase.stop()
+                val tempFile = _uiState.value.lastRecordedFile
                 _uiState.value = _uiState.value.copy(
                     isRecording = false, 
                     showSaveDialog = true,
-                    tempRecordedFile = _uiState.value.lastRecordedFile
+                    statusMessage = null, // Clear the "Recording..." message
+                    tempRecordedFile = tempFile,
+                    suggestedFileName = "recorded_audio_${System.currentTimeMillis()}.pcm"
                 )
             } else {
-                val cacheDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                val file = File(cacheDir, "temp_recording.pcm") // Use temporary name, rename later
-                _uiState.value = _uiState.value.copy(isRecording = true, statusMessage = "Recording...", lastRecordedFile = file)
+                val cacheDir = application.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: application.cacheDir
+                val file = File(cacheDir, "temp_recording.pcm")
+                _uiState.value = _uiState.value.copy(isRecording = true, statusMessage = "Recording...", lastRecordedFile = file, errorMessage = null)
                 try {
                     recordAudioUseCase.start(file, config)
                 } catch (e: Exception) {
@@ -87,28 +92,44 @@ class GeneratorViewModel @Inject constructor(
         }
     }
 
-    fun convertToPcm() {
-        val inFile = _uiState.value.selectedFileToConvert ?: return
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isConverting = true, errorMessage = null)
-            val outFile = File(inFile.parent, "${inFile.nameWithoutExtension}.pcm")
-            val result = convertAudioToPcmUseCase(inFile, outFile)
-            if (result.isSuccess) {
-                 _uiState.value = _uiState.value.copy(isConverting = false, statusMessage = "Converted to ${outFile.absolutePath}")
-            } else {
-                 _uiState.value = _uiState.value.copy(isConverting = false, errorMessage = result.exceptionOrNull()?.message)
-            }
+    fun requestPcmSaveFileName() {
+        val file = _uiState.value.selectedFileToConvert ?: return
+        val suggested = "${file.nameWithoutExtension}.pcm"
+        _uiState.value = _uiState.value.copy(showSaveDialog = true, suggestedFileName = suggested, tempRecordedFile = null)
+    }
+
+    fun saveFile(fileName: String) {
+        val tempFile = _uiState.value.tempRecordedFile
+        if (tempFile != null) {
+            // Saving a recording
+            val finalFile = File(tempFile.parent, if (fileName.endsWith(".pcm")) fileName else "$fileName.pcm")
+            tempFile.renameTo(finalFile)
+            _uiState.value = _uiState.value.copy(
+                showSaveDialog = false, 
+                statusMessage = "Saved recording as ${finalFile.name}",
+                lastRecordedFile = finalFile
+            )
+            android.widget.Toast.makeText(application, "Saved: ${finalFile.name}", android.widget.Toast.LENGTH_SHORT).show()
+        } else {
+            // Saving a conversion
+            performPcmConversion(fileName)
         }
     }
-    fun saveRecording(fileName: String) {
-        val tempFile = _uiState.value.tempRecordedFile ?: return
-        val finalFile = File(tempFile.parent, if (fileName.endsWith(".pcm")) fileName else "$fileName.pcm")
-        tempFile.renameTo(finalFile)
-        _uiState.value = _uiState.value.copy(
-            showSaveDialog = false, 
-            statusMessage = "Saved to ${finalFile.name}",
-            lastRecordedFile = finalFile
-        )
+
+    private fun performPcmConversion(fileName: String) {
+        val inFile = _uiState.value.selectedFileToConvert ?: return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isConverting = true, showSaveDialog = false, errorMessage = null)
+            val outFile = File(inFile.parent, fileName)
+            val result = convertAudioToPcmUseCase(inFile, outFile)
+            if (result.isSuccess) {
+                 _uiState.value = _uiState.value.copy(isConverting = false, statusMessage = "Converted to ${outFile.name}")
+                 android.widget.Toast.makeText(application, "Saved: ${outFile.name}", android.widget.Toast.LENGTH_SHORT).show()
+            } else {
+                 _uiState.value = _uiState.value.copy(isConverting = false, errorMessage = result.exceptionOrNull()?.message)
+                 android.widget.Toast.makeText(application, "Error: ${result.exceptionOrNull()?.message}", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     fun cancelSave() {
@@ -127,5 +148,6 @@ data class GeneratorUiState(
     val errorMessage: String? = null,
     val currentAmplitude: Float = 0f,
     val showSaveDialog: Boolean = false,
-    val tempRecordedFile: File? = null
+    val tempRecordedFile: File? = null,
+    val suggestedFileName: String = ""
 )

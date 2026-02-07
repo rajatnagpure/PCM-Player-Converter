@@ -17,7 +17,7 @@ import androidx.core.view.WindowCompat
 
 // Force Light Theme (Dark Theme Disabled as per user request)
 private val LightColorScheme = lightColorScheme(
-    primary = GradientStart,
+    primary = TopBarPink,
     secondary = GradientEnd,
     tertiary = Pink80,
     background = SurfaceLight,
@@ -43,8 +43,10 @@ fun PCMPlayerConverterTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb() // Status bar follows primary color
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false // White icons on dark/gradient status bar
+            window.statusBarColor = colorScheme.primary.toArgb()
+            window.navigationBarColor = colorScheme.background.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = true
         }
     }
 
