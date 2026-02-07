@@ -21,11 +21,17 @@ class PcmPlayer @Inject constructor() {
     private val _isPlaying = kotlinx.coroutines.flow.MutableStateFlow(false)
     val isPlayingFlow: kotlinx.coroutines.flow.StateFlow<Boolean> = _isPlaying
 
+    private val _isPaused = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val isPausedFlow: kotlinx.coroutines.flow.StateFlow<Boolean> = _isPaused
+
     private val _currentFile = kotlinx.coroutines.flow.MutableStateFlow<File?>(null)
     val currentFile: kotlinx.coroutines.flow.StateFlow<File?> = _currentFile
 
     private val _progress = kotlinx.coroutines.flow.MutableStateFlow(0f)
     val progressFlow: kotlinx.coroutines.flow.StateFlow<Float> = _progress
+
+    private val _lastConfig = kotlinx.coroutines.flow.MutableStateFlow<AudioConfig?>(null)
+    val lastConfig: kotlinx.coroutines.flow.StateFlow<AudioConfig?> = _lastConfig
 
     private var seekRequested: Float? = null
     
@@ -59,7 +65,9 @@ class PcmPlayer @Inject constructor() {
 
             audioTrack?.play()
             _isPlaying.value = true
+            _isPaused.value = false
             _currentFile.value = file
+            _lastConfig.value = config
             isPlayingVar = true
 
             val totalBytes = file.length()
@@ -70,6 +78,16 @@ class PcmPlayer @Inject constructor() {
 
             try {
                 while (_isPlaying.value) {
+                    // Handle Pause
+                    if (_isPaused.value) {
+                        audioTrack?.pause()
+                        while (_isPaused.value && _isPlaying.value) {
+                            kotlinx.coroutines.delay(100)
+                        }
+                        if (!_isPlaying.value) break
+                        audioTrack?.play()
+                    }
+
                     val currentSeek = seekRequested
                     if (currentSeek != null) {
                         val seekPos = (currentSeek * totalBytes).toLong()
@@ -104,8 +122,23 @@ class PcmPlayer @Inject constructor() {
         }
     }
 
+    fun pause() {
+        if (_isPlaying.value) {
+            _isPaused.value = true
+            isPlayingVar = false
+        }
+    }
+
+    fun resume() {
+        if (_isPlaying.value) {
+            _isPaused.value = false
+            isPlayingVar = true
+        }
+    }
+
     fun stop() {
         _isPlaying.value = false
+        _isPaused.value = false
         isPlayingVar = false
         try {
             audioTrack?.stop()

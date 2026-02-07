@@ -26,8 +26,10 @@ import java.io.File
 fun AudioPlayerSheet(
     file: File?,
     progress: Float,
+    isPlaying: Boolean,
+    isPaused: Boolean,
     onProgressChange: (Float) -> Unit,
-    onStop: () -> Unit,
+    onTogglePlayback: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -40,65 +42,45 @@ fun AudioPlayerSheet(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .aspectRatio(1f),
         shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
                 .background(gradient)
-                .padding(16.dp)
-                .fillMaxWidth()
+                .padding(24.dp)
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceEvenly
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.MusicNote,
                     contentDescription = null,
                     tint = DarkBlue,
-                    modifier = Modifier.size(32.dp).padding(end = 12.dp)
+                    modifier = Modifier.size(64.dp)
                 )
                 
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Now Playing",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = DarkBlue.copy(alpha = 0.8f)
-                    )
-                    Text(
-                        text = file.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = DarkBlue,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+                Spacer(modifier = Modifier.height(16.dp))
                 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onStop) {
-                        Icon(
-                            imageVector = Icons.Default.Stop,
-                            contentDescription = "Stop",
-                            tint = DarkBlue,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
-                    
-                    IconButton(onClick = onDismiss) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Dismiss",
-                            tint = DarkBlue,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
+                Text(
+                    text = "Now Playing",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = DarkBlue.copy(alpha = 0.8f)
+                )
+                Text(
+                    text = file.name,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = DarkBlue,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
             }
-            
-            Spacer(modifier = Modifier.height(8.dp))
             
             Slider(
                 value = progress,
@@ -108,8 +90,40 @@ fun AudioPlayerSheet(
                     activeTrackColor = DarkBlue,
                     inactiveTrackColor = DarkBlue.copy(alpha = 0.3f)
                 ),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
             )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                IconButton(
+                    onClick = onTogglePlayback,
+                    modifier = Modifier.size(64.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isPlaying && !isPaused) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = if (isPlaying && !isPaused) "Pause" else "Play",
+                        tint = DarkBlue,
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(32.dp))
+                
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(64.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Dismiss",
+                        tint = DarkBlue,
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
+            }
         }
     }
 }

@@ -24,6 +24,9 @@ class MainViewModel @Inject constructor(
     val isPlaying: StateFlow<Boolean> = pcmPlayer.isPlayingFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val isPaused: StateFlow<Boolean> = pcmPlayer.isPausedFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val currentFile: StateFlow<File?> = pcmPlayer.currentFile
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
@@ -37,6 +40,24 @@ class MainViewModel @Inject constructor(
                 if (playing) {
                     _isPlayerVisible.value = true
                 }
+            }
+        }
+    }
+
+    fun togglePlayback() {
+        val playing = isPlaying.value
+        val paused = isPaused.value
+        val file = currentFile.value
+        val lastConfig = pcmPlayer.lastConfig.value
+
+        if (paused) {
+            pcmPlayer.resume()
+        } else if (playing) {
+            pcmPlayer.pause()
+        } else if (file != null && lastConfig != null) {
+            // Restart playback
+            viewModelScope.launch {
+                pcmPlayer.play(file, lastConfig)
             }
         }
     }

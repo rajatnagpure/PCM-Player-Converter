@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.*
 import androidx.navigation.compose.*
@@ -50,6 +51,8 @@ fun AppNavigation(
     }
 
     val isPlayerVisible by mainViewModel.isPlayerVisible.collectAsState()
+    val isPlaying by mainViewModel.isPlaying.collectAsState()
+    val isPaused by mainViewModel.isPaused.collectAsState()
     val currentFile by mainViewModel.currentFile.collectAsState()
     val progress by mainViewModel.progress.collectAsState()
     
@@ -140,21 +143,18 @@ fun AppNavigation(
                 }
             }
             
-            AnimatedVisibility(
-                visible = isPlayerVisible && currentFile != null,
-                enter = slideInVertically { it },
-                exit = slideOutVertically { it },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(innerPadding)
-            ) {
-                AudioPlayerSheet(
-                    file = currentFile,
-                    progress = progress,
-                    onProgressChange = { mainViewModel.seekTo(it) },
-                    onStop = { mainViewModel.stopPlayback() },
-                    onDismiss = { mainViewModel.dismissPlayer() }
-                )
+            if (isPlayerVisible && currentFile != null) {
+                Dialog(onDismissRequest = { mainViewModel.dismissPlayer() }) {
+                    AudioPlayerSheet(
+                        file = currentFile,
+                        progress = progress,
+                        isPlaying = isPlaying,
+                        isPaused = isPaused,
+                        onProgressChange = { mainViewModel.seekTo(it) },
+                        onTogglePlayback = { mainViewModel.togglePlayback() },
+                        onDismiss = { mainViewModel.dismissPlayer() }
+                    )
+                }
             }
         }
     }
