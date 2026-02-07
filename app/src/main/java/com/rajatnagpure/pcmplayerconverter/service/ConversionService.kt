@@ -39,9 +39,24 @@ class ConversionService : Service() {
             serviceScope.launch {
                 try {
                     convertPcmUseCase(inFile, outFile, config)
+                    // notify success to UI
+                    val successIntent = Intent(ACTION_CONVERSION_COMPLETE).apply {
+                        putExtra("success", true)
+                        putExtra("outFile", outFile.absolutePath)
+                    }
+                    sendBroadcast(successIntent)
+
                     stopForeground(STOP_FOREGROUND_REMOVE)
                     stopSelf()
                 } catch (e: Exception) {
+                    // notify failure to UI
+                    val failIntent = Intent(ACTION_CONVERSION_COMPLETE).apply {
+                        putExtra("success", false)
+                        putExtra("message", e.message)
+                        putExtra("outFile", outFile?.absolutePath)
+                    }
+                    sendBroadcast(failIntent)
+
                     stopForeground(STOP_FOREGROUND_REMOVE)
                     stopSelf()
                 }
@@ -68,5 +83,9 @@ class ConversionService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         serviceScope.cancel()
+    }
+
+    companion object {
+        const val ACTION_CONVERSION_COMPLETE = "com.rajatnagpure.pcmplayerconverter.CONVERSION_COMPLETE"
     }
 }

@@ -121,7 +121,7 @@ class GeneratorViewModel @Inject constructor(
                 statusMessage = "Saved recording as ${finalFile.name}",
                 lastRecordedFile = finalFile
             )
-            android.widget.Toast.makeText(application, "Saved: ${finalFile.name}", android.widget.Toast.LENGTH_SHORT).show()
+            // Toast removed: UI will display statusMessage once and clear it
         } else {
             // Saving a conversion
             performPcmConversion(fileName)
@@ -136,10 +136,10 @@ class GeneratorViewModel @Inject constructor(
             val result = convertAudioToPcmUseCase(inFile, outFile)
             if (result.isSuccess) {
                  _uiState.value = _uiState.value.copy(isConverting = false, statusMessage = "Converted to ${outFile.name}")
-                 android.widget.Toast.makeText(application, "Saved: ${outFile.name}", android.widget.Toast.LENGTH_SHORT).show()
+                 // Toast removed: UI will display statusMessage once and clear it
             } else {
                  _uiState.value = _uiState.value.copy(isConverting = false, errorMessage = result.exceptionOrNull()?.message)
-                 android.widget.Toast.makeText(application, "Error: ${result.exceptionOrNull()?.message}", android.widget.Toast.LENGTH_SHORT).show()
+                 // Error toast removed; UI shows errorMessage
             }
         }
     }
@@ -147,6 +147,11 @@ class GeneratorViewModel @Inject constructor(
     fun cancelSave() {
         _uiState.value.tempRecordedFile?.delete()
         _uiState.value = _uiState.value.copy(showSaveDialog = false, tempRecordedFile = null)
+    }
+
+    // New helper to let UI clear status messages after showing toast once
+    fun clearStatusMessage() {
+        _uiState.value = _uiState.value.copy(statusMessage = null)
     }
 }
 

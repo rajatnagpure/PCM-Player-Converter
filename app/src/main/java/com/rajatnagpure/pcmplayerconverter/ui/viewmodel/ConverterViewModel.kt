@@ -1,7 +1,10 @@
 package com.rajatnagpure.pcmplayerconverter.ui.viewmodel
 
 import android.app.Application
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -30,7 +33,27 @@ class ConverterViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ConverterUiState())
     val uiState: StateFlow<ConverterUiState> = _uiState.asStateFlow()
 
+    private val conversionReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent == null) return
+            if (intent.action == com.rajatnagpure.pcmplayerconverter.service.ConversionService.ACTION_CONVERSION_COMPLETE) {
+                val success = intent.getBooleanExtra("success", false)
+                val outPath = intent.getStringExtra("outFile")
+                // Clear converting flags and set message
+                viewModelScope.launch {
+                    _uiState.value = _uiState.value.copy(isConverting = false, conversionMessage = if (success) "Saved: ${outPath?.substringAfterLast('/')}" else "Conversion failed")
+                }
+            }
+        }
+    }
+
     init {
+        // register broadcast receiver to listen for conversion completion
+        val filter = IntentFilter().apply {
+            addAction(com.rajatnagpure.pcmplayerconverter.service.ConversionService.ACTION_CONVERSION_COMPLETE)
+        }
+        application.registerReceiver(conversionReceiver, filter)
+
         viewModelScope.launch {
             savedStateHandle.getStateFlow("uri", "{uri}").collect { uriStr ->
                 android.util.Log.d("ConverterViewModel", "Received URI from SavedStateHandle: $uriStr")
@@ -51,6 +74,15 @@ class ConverterViewModel @Inject constructor(
                     android.util.Log.d("ConverterViewModel", "Skipping placeholder/null/blank URI")
                 }
             }
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        try {
+            application.unregisterReceiver(conversionReceiver)
+        } catch (e: Exception) {
+            // ignore
         }
     }
 
@@ -120,6 +152,7 @@ class ConverterViewModel @Inject constructor(
             application.startService(intent)
         }
         
+        // conversionMessage will be cleared when broadcast received
         _uiState.value = _uiState.value.copy(conversionMessage = "Conversion started in background...")
         android.widget.Toast.makeText(application, "Saving to ${outFile.name}...", android.widget.Toast.LENGTH_SHORT).show()
     }
@@ -142,6 +175,11 @@ class ConverterViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    // allow external clearing of conversion message
+    fun clearConversionMessage() {
+        _uiState.value = _uiState.value.copy(conversionMessage = null)
     }
 }
 

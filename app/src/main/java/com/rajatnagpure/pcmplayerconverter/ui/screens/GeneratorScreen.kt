@@ -2,6 +2,12 @@ package com.rajatnagpure.pcmplayerconverter.ui.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,8 +32,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.Canvas
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.border
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import com.rajatnagpure.pcmplayerconverter.ui.components.AppButton
@@ -47,6 +51,7 @@ fun GeneratorScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
+
     val context = LocalContext.current
 
     // React to nav argument once - ensure we only call when real uri present
@@ -68,6 +73,8 @@ fun GeneratorScreen(
     LaunchedEffect(uiState.statusMessage) {
         uiState.statusMessage?.let {
             android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_SHORT).show()
+            // ensure the message is shown only once
+            viewModel.clearStatusMessage()
         }
     }
 
@@ -107,7 +114,21 @@ fun GeneratorScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Top Layout: Select Audio & Record Buttons
+        Text(
+            "Recording Configuration",
+            style = MaterialTheme.typography.titleMedium,
+            color = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue,
+            modifier = Modifier.align(Alignment.Start)
+        )
+
+        AppCard {
+            AudioConfigSelector(
+                config = uiState.audioConfig,
+                onConfigChange = { viewModel.updateConfig(it) }
+            )
+        }
+
+        // Moved buttons: Select Audio and Record go here, below Recording Configuration
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -118,7 +139,7 @@ fun GeneratorScreen(
                 onClick = { audioPickerLauncher.launch(arrayOf("audio/*")) },
                 modifier = Modifier.weight(1f)
             )
-            
+
             AppButton(
                 text = if (uiState.isRecording) "Stop" else "Record",
                 icon = if (uiState.isRecording) Icons.Default.Stop else Icons.Default.Mic,
@@ -131,20 +152,6 @@ fun GeneratorScreen(
                 },
                 modifier = Modifier.weight(1f),
                 overrideColor = if (uiState.isRecording) MaterialTheme.colorScheme.error else null
-            )
-        }
-        
-        Text(
-            "Recording Configuration", 
-            style = MaterialTheme.typography.titleMedium, 
-            color = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue,
-            modifier = Modifier.align(Alignment.Start)
-        )
-        
-        AppCard {
-            AudioConfigSelector(
-                config = uiState.audioConfig,
-                onConfigChange = { viewModel.updateConfig(it) }
             )
         }
 
@@ -191,7 +198,7 @@ fun GeneratorScreen(
                         Text(text = it, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
                     }
                     if (uiState.statusMessage == null && uiState.errorMessage == null) {
-                        Text(text = "Ready to record or convert", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(text = "Ready to record or convert?!", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
         }
