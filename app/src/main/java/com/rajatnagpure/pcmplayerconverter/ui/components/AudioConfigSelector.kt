@@ -9,7 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -24,6 +24,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import com.rajatnagpure.pcmplayerconverter.domain.model.AudioConfig
 import com.rajatnagpure.pcmplayerconverter.domain.model.PcmEncoding
@@ -34,14 +36,51 @@ fun AudioConfigSelector(
     config: AudioConfig,
     onConfigChange: (AudioConfig) -> Unit
 ) {
+    val sampleRateOptions = SUPPORTED_SAMPLE_RATES.map { it.toString() } + "Custom..."
+    var isCustomSampleRate by remember { 
+        mutableStateOf(!SUPPORTED_SAMPLE_RATES.contains(config.sampleRate)) 
+    }
+
     Column {
         // Sample Rate Dropdown
         DropdownSelector(
             label = "Sample Rate",
-            options = SUPPORTED_SAMPLE_RATES.map { it.toString() },
-            selectedOption = config.sampleRate.toString(),
-            onOptionSelected = { onConfigChange(config.copy(sampleRate = it.toInt())) }
+            options = sampleRateOptions,
+            selectedOption = if (isCustomSampleRate) "Custom..." else config.sampleRate.toString(),
+            onOptionSelected = { 
+                if (it == "Custom...") {
+                    isCustomSampleRate = true
+                } else {
+                    isCustomSampleRate = false
+                    onConfigChange(config.copy(sampleRate = it.toInt()))
+                }
+            }
         )
+
+        // Custom Sample Rate Input
+        if (isCustomSampleRate) {
+            OutlinedTextField(
+                value = config.sampleRate.toString(),
+                onValueChange = { newVal ->
+                    val filtered = newVal.filter { it.isDigit() }
+                    if (filtered.isNotEmpty()) {
+                        onConfigChange(config.copy(sampleRate = filtered.toInt()))
+                    } else {
+                        onConfigChange(config.copy(sampleRate = 0))
+                    }
+                },
+                label = { Text("Enter Custom Rate (Hz)", color = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue,
+                    unfocusedBorderColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue.copy(alpha = 0.5f),
+                    focusedLabelColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue,
+                    unfocusedLabelColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue.copy(alpha = 0.7f)
+                )
+            )
+        }
 
         // Channels Dropdown
         DropdownSelector(
@@ -89,7 +128,6 @@ fun AudioConfigSelector(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DropdownSelector(
     label: String,
@@ -108,7 +146,7 @@ fun DropdownSelector(
             trailingIcon = {
                 Icon(Icons.Default.ArrowDropDown, "Dropdown", tint = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue)
             },
-            colors = androidx.compose.material3.TextFieldDefaults.outlinedTextFieldColors(
+            colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue,
                 unfocusedBorderColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue.copy(alpha = 0.5f),
                 focusedLabelColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue,

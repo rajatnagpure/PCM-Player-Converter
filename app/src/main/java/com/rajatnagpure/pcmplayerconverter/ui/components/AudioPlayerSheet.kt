@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.rajatnagpure.pcmplayerconverter.ui.theme.Blue80
 import com.rajatnagpure.pcmplayerconverter.ui.theme.Pink80
+import com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue
 import java.io.File
 
 @Composable
@@ -57,7 +58,7 @@ fun AudioPlayerSheet(
                 Icon(
                     imageVector = Icons.Default.MusicNote,
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = DarkBlue,
                     modifier = Modifier.size(32.dp).padding(end = 12.dp)
                 )
                 
@@ -65,12 +66,12 @@ fun AudioPlayerSheet(
                     Text(
                         text = "Now Playing",
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color.White.copy(alpha = 0.8f)
+                        color = DarkBlue.copy(alpha = 0.8f)
                     )
                     Text(
                         text = file.name,
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color.White,
+                        color = DarkBlue,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -80,7 +81,7 @@ fun AudioPlayerSheet(
                     Icon(
                         imageVector = Icons.Default.Stop,
                         contentDescription = "Stop",
-                        tint = Color.White,
+                        tint = DarkBlue,
                         modifier = Modifier.size(32.dp)
                     )
                 }
@@ -92,9 +93,9 @@ fun AudioPlayerSheet(
                 value = progress,
                 onValueChange = onProgressChange,
                 colors = SliderDefaults.colors(
-                    thumbColor = Color.White,
-                    activeTrackColor = Color.White,
-                    inactiveTrackColor = Color.White.copy(alpha = 0.3f)
+                    thumbColor = DarkBlue,
+                    activeTrackColor = DarkBlue,
+                    inactiveTrackColor = DarkBlue.copy(alpha = 0.3f)
                 ),
                 modifier = Modifier.fillMaxWidth()
             )

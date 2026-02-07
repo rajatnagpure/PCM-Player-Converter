@@ -100,7 +100,7 @@ fun ConverterScreen(
             }
         }
 
-        Divider(color = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue.copy(alpha = 0.1f))
+        HorizontalDivider(color = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue.copy(alpha = 0.1f))
         
         Text(
             text = "Output Configuration",

@@ -38,7 +38,6 @@ import com.rajatnagpure.pcmplayerconverter.ui.theme.GradientStart
 import com.rajatnagpure.pcmplayerconverter.ui.theme.GradientEnd
 import java.io.File
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GeneratorScreen(
     viewModel: GeneratorViewModel = hiltViewModel()
@@ -238,7 +237,6 @@ fun StringWaveformView(amplitude: Float) {
 
 // AppButton moved to common components
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SaveFileDialog(
     suggestedName: String,
@@ -259,9 +257,11 @@ fun SaveFileDialog(
                     onValueChange = { fileName = it },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = TextFieldDefaults.textFieldColors(
+                    colors = TextFieldDefaults.colors(
                         focusedIndicatorColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue,
-                        unfocusedIndicatorColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue.copy(alpha = 0.5f)
+                        unfocusedIndicatorColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue.copy(alpha = 0.5f),
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent
                     )
                 )
             }
