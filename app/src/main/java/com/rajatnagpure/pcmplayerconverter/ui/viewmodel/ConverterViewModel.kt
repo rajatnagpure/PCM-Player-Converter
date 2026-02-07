@@ -57,7 +57,25 @@ class ConverterViewModel @Inject constructor(
     fun onFileSelected(uri: Uri) {
         android.util.Log.d("ConverterViewModel", "onFileSelected called with URI: $uri")
         viewModelScope.launch {
-            val file = localFileDataSource.getFileFromUri(uri)
+            var file: File? = null
+            try {
+                if ("content".equals(uri.scheme, ignoreCase = true)) {
+                    // prefer a cached copy for content URIs to avoid permission issues
+                    try {
+                        file = localFileDataSource.copyUriToCache(uri)
+                        android.util.Log.d("ConverterViewModel", "Copied content URI to cache: ${file?.absolutePath}")
+                    } catch (e: Exception) {
+                        android.util.Log.w("ConverterViewModel", "copyUriToCache failed, will fallback to getFileFromUri", e)
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("ConverterViewModel", "Error while attempting to copy URI to cache", e)
+            }
+
+            if (file == null) {
+                file = localFileDataSource.getFileFromUri(uri)
+            }
+
             if (file != null) {
                 android.util.Log.d("ConverterViewModel", "File loaded successfully: ${file.name}")
                 _uiState.value = _uiState.value.copy(selectedFile = file, errorMessage = null)
