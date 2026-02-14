@@ -20,10 +20,10 @@ enum class PcmEncoding(val bitDepth: Int, val description: String) : Parcelable 
 }
 
 @Parcelize
-enum class AudioOutputFormat(val extension: String, val description: String) : Parcelable {
-    WAV("wav", "WAV (Lossless)"),
-    M4A("m4a", "M4A (AAC)"),
-    FLAC("flac", "FLAC (Lossless)")
+enum class AudioOutputFormat(val extension: String, val description: String, val mimeType: String) : Parcelable {
+    WAV("wav", "WAV (Lossless)", "audio/wav"),
+    M4A("m4a", "M4A (AAC)", "audio/mp4"),
+    FLAC("flac", "FLAC (Lossless)", "audio/flac")
 }
 
 val SUPPORTED_SAMPLE_RATES = listOf(8000, 11025, 16000, 22050, 32000, 44100, 48000, 88200, 96000, 176400, 192000)

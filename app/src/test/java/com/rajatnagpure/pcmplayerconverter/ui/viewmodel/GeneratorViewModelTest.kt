@@ -13,12 +13,35 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
 
+@kotlinx.coroutines.ExperimentalCoroutinesApi
+@org.junit.runner.RunWith(org.robolectric.RobolectricTestRunner::class)
 class GeneratorViewModelTest {
+
+    private lateinit var testDispatcher: kotlinx.coroutines.test.TestDispatcher
+
+    @org.junit.Before
+    fun setup() {
+        testDispatcher = kotlinx.coroutines.test.StandardTestDispatcher()
+        kotlinx.coroutines.Dispatchers.setMain(testDispatcher)
+    }
+
+    @org.junit.After
+    fun tearDown() {
+        kotlinx.coroutines.Dispatchers.resetMain()
+    }
 
     @Test
     fun `savedStateHandle uri triggers onFileSelectedForConversion`() = runTest {
-        val recordUseCase = mockk<RecordAudioUseCase>(relaxed = true)
+        val recordUseCase = mockk<RecordAudioUseCase>()
+        every { recordUseCase.amplitudeFlow } returns kotlinx.coroutines.flow.MutableStateFlow(0f)
+        coEvery { recordUseCase.start(any(), any()) } returns Unit
+        coEvery { recordUseCase.stop() } returns Unit
+        every { recordUseCase.isRecording() } returns false
+
         val convertUseCase = mockk<ConvertAudioToPcmUseCase>(relaxed = true)
         val localData = mockk<LocalFileDataSource>(relaxed = true)
         val application = mockk<Application>(relaxed = true)
@@ -38,7 +61,12 @@ class GeneratorViewModelTest {
 
     @Test
     fun `saveFile starts background conversion and sets isConverting`() = runTest {
-        val recordUseCase = mockk<RecordAudioUseCase>(relaxed = true)
+        val recordUseCase = mockk<RecordAudioUseCase>()
+        every { recordUseCase.amplitudeFlow } returns kotlinx.coroutines.flow.MutableStateFlow(0f)
+        coEvery { recordUseCase.start(any(), any()) } returns Unit
+        coEvery { recordUseCase.stop() } returns Unit
+        every { recordUseCase.isRecording() } returns false
+
         val convertUseCase = mockk<ConvertAudioToPcmUseCase>(relaxed = true)
         val localData = mockk<LocalFileDataSource>(relaxed = true)
         val application = mockk<Application>(relaxed = true)
@@ -54,8 +82,10 @@ class GeneratorViewModelTest {
         val file = vm.uiState.value.selectedFileToConvert
         assertNotNull(file)
 
-        // call saveFile to trigger background conversion
-        vm.saveFile("out.pcm")
+        // call saveFileToUri to trigger background conversion
+        val mockUri = mockk<Uri>(relaxed = true)
+        every { mockUri.toString() } returns "content://out/file.pcm"
+        vm.saveFileToUri(mockUri)
 
         // immediately should be in converting state
         assertTrue(vm.uiState.value.isConverting)

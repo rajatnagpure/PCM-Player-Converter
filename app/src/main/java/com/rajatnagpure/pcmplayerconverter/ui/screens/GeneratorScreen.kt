@@ -98,12 +98,19 @@ fun GeneratorScreen(
         onResult = { uri -> uri?.let { viewModel.onFileSelectedForConversion(it) } }
     )
 
+    // Launcher for saving files (Scoped Storage)
+    val saveLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri ->
+        uri?.let { viewModel.saveFileToUri(it) }
+    }
+
     if (uiState.showSaveDialog) {
-        SaveFileDialog(
-            suggestedName = uiState.suggestedFileName,
-            onDismiss = { viewModel.cancelSave() },
-            onConfirm = { fileName -> viewModel.saveFile(fileName) }
-        )
+        // Trigger system picker
+        LaunchedEffect(Unit) {
+            saveLauncher.launch(uiState.suggestedFileName)
+            viewModel.cancelSave()
+        }
     }
 
     Column(

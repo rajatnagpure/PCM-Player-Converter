@@ -38,13 +38,15 @@ class GeneratorViewModel @Inject constructor(
             if (intent == null) return
             if (intent.action == com.rajatnagpure.pcmplayerconverter.service.ConversionService.ACTION_CONVERSION_COMPLETE) {
                 val success = intent.getBooleanExtra("success", false)
+                val outUriString = intent.getStringExtra("outUri")
                 val outPath = intent.getStringExtra("outFile")
                 viewModelScope.launch {
-                    if (success) {
-                        _uiState.value = _uiState.value.copy(isConverting = false, statusMessage = "Converted to ${outPath?.substringAfterLast('/')}" )
+                    val msg = if (success) {
+                        if (outUriString != null) "Saved to selected file" else "Saved: ${outPath?.substringAfterLast('/')}"
                     } else {
-                        _uiState.value = _uiState.value.copy(isConverting = false, errorMessage = intent.getStringExtra("message"))
+                        intent.getStringExtra("message")
                     }
+                    _uiState.value = _uiState.value.copy(isConverting = false, statusMessage = if (success) msg else null, errorMessage = if (!success) msg else null)
                 }
             }
         }
@@ -55,7 +57,11 @@ class GeneratorViewModel @Inject constructor(
         val filter = IntentFilter().apply {
             addAction(com.rajatnagpure.pcmplayerconverter.service.ConversionService.ACTION_CONVERSION_COMPLETE)
         }
-        application.registerReceiver(conversionReceiver, filter)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            application.registerReceiver(conversionReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            application.registerReceiver(conversionReceiver, filter)
+        }
 
         viewModelScope.launch {
             savedStateHandle.getStateFlow("uri", "{uri}").collect { uriStr ->
@@ -146,28 +152,38 @@ class GeneratorViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(showSaveDialog = true, suggestedFileName = suggested, tempRecordedFile = null)
     }
 
-    fun saveFile(fileName: String) {
+    fun saveFileToUri(outUri: Uri) {
         val tempFile = _uiState.value.tempRecordedFile
         if (tempFile != null) {
-            // Saving a recording
-            val finalFile = File(tempFile.parent, if (fileName.endsWith(".pcm")) fileName else "$fileName.pcm")
-            tempFile.renameTo(finalFile)
-            _uiState.value = _uiState.value.copy(
-                showSaveDialog = false, 
-                statusMessage = "Saved recording as ${finalFile.name}",
-                lastRecordedFile = finalFile
-            )
-            // Toast removed: UI will display statusMessage once and clear it
+            // Saving a recording: direct copy
+            viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                _uiState.value = _uiState.value.copy(showSaveDialog = false, isConverting = true, statusMessage = "Saving...")
+                try {
+                    application.contentResolver.openOutputStream(outUri)?.use { output ->
+                        java.io.FileInputStream(tempFile).use { input ->
+                            input.copyTo(output)
+                        }
+                    }
+                    tempFile.delete()
+                    _uiState.value = _uiState.value.copy(
+                        isConverting = false, 
+                        statusMessage = "Saved recording successfully",
+                        lastRecordedFile = null, // Clear reference to deleted temp file
+                        tempRecordedFile = null
+                    )
+                } catch (e: Exception) {
+                    _uiState.value = _uiState.value.copy(isConverting = false, errorMessage = "Save failed: ${e.message}")
+                }
+            }
         } else {
-            // Saving a conversion - now delegate to ConversionService for background processing
+            // Saving a conversion - delegate to ConversionService
             val inFile = _uiState.value.selectedFileToConvert ?: return
-            val outFile = File(inFile.parent, fileName)
             _uiState.value = _uiState.value.copy(isConverting = true, showSaveDialog = false, errorMessage = null)
 
             // start background ConversionService with task AUDIO_TO_PCM
             val intent = android.content.Intent(application, com.rajatnagpure.pcmplayerconverter.service.ConversionService::class.java).apply {
                 putExtra("inFile", inFile)
-                putExtra("outFile", outFile)
+                putExtra("outUri", outUri.toString())
                 putExtra("task", "AUDIO_TO_PCM")
             }
 
@@ -175,22 +191,6 @@ class GeneratorViewModel @Inject constructor(
                 application.startForegroundService(intent)
             } else {
                 application.startService(intent)
-            }
-        }
-    }
-
-    private fun performPcmConversion(fileName: String) {
-        val inFile = _uiState.value.selectedFileToConvert ?: return
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isConverting = true, showSaveDialog = false, errorMessage = null)
-            val outFile = File(inFile.parent, fileName)
-            val result = convertAudioToPcmUseCase(inFile, outFile)
-            if (result.isSuccess) {
-                 _uiState.value = _uiState.value.copy(isConverting = false, statusMessage = "Converted to ${outFile.name}")
-                 // Toast removed: UI will display statusMessage once and clear it
-            } else {
-                 _uiState.value = _uiState.value.copy(isConverting = false, errorMessage = result.exceptionOrNull()?.message)
-                 // Error toast removed; UI shows errorMessage
             }
         }
     }

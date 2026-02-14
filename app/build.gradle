@@ -38,6 +38,9 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion '1.5.14'
     }
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
     namespace 'com.rajatnagpure.pcmplayerconverter'
 }
 

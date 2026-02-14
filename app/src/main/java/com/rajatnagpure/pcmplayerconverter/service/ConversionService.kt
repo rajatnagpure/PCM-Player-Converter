@@ -35,30 +35,56 @@ class ConversionService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val inFile = intent?.getSerializableExtra("inFile") as? File
-        val outFile = intent?.getSerializableExtra("outFile") as? File
+        val outUriString = intent?.getStringExtra("outUri")
+        val outFile = intent?.getSerializableExtra("outFile") as? File // Legacy/Internal support
         val config = intent?.getParcelableExtra<com.rajatnagpure.pcmplayerconverter.domain.model.AudioConfig>("config")
         val task = intent?.getStringExtra("task") ?: "PCM_TO_FORMAT"
 
-        if (inFile != null && outFile != null) {
+        if (inFile != null && (outUriString != null || outFile != null)) {
             startForeground(1, createNotification("Converting..."))
             serviceScope.launch {
+                var tempFile: File? = null
                 try {
+                    // unexpected but possible: use provided outFile or create a temp one
+                    val workingFile = if (outFile != null) {
+                        outFile
+                    } else {
+                        // Create a temp file in cache for the conversion process
+                        tempFile = File(cacheDir, "temp_conversion_${System.currentTimeMillis()}")
+                        tempFile
+                    }
+
                     if (task == "AUDIO_TO_PCM") {
                         // convert from input audio to PCM
-                        convertAudioToPcmUseCase(inFile, outFile)
+                        convertAudioToPcmUseCase(inFile, workingFile)
                     } else {
                         // default: convert pcm to requested format
                         if (config != null) {
-                            convertPcmUseCase(inFile, outFile, config)
+                            convertPcmUseCase(inFile, workingFile, config)
                         } else {
                             throw IllegalArgumentException("Missing config for PCM conversion")
                         }
                     }
 
+                    // If we used a temp file and have a target URI, copy the result there
+                    if (outUriString != null && tempFile != null && workingFile.exists()) {
+                         val outUri = android.net.Uri.parse(outUriString)
+                         contentResolver.openOutputStream(outUri)?.use { outputStream ->
+                             java.io.FileInputStream(workingFile).use { inputStream ->
+                                 inputStream.copyTo(outputStream)
+                             }
+                         }
+                    }
+
                     // notify success to UI
                     val successIntent = Intent(ACTION_CONVERSION_COMPLETE).apply {
                         putExtra("success", true)
-                        putExtra("outFile", outFile.absolutePath)
+                        if (outUriString != null) {
+                             putExtra("outUri", outUriString)
+                        }
+                        if (outFile != null) {
+                             putExtra("outFile", outFile.absolutePath)
+                        }
                     }
                     sendBroadcast(successIntent)
 
@@ -69,12 +95,14 @@ class ConversionService : Service() {
                     val failIntent = Intent(ACTION_CONVERSION_COMPLETE).apply {
                         putExtra("success", false)
                         putExtra("message", e.message)
-                        putExtra("outFile", outFile?.absolutePath)
                     }
                     sendBroadcast(failIntent)
 
                     stopForeground(STOP_FOREGROUND_REMOVE)
                     stopSelf()
+                } finally {
+                    // Clean up temp file
+                    tempFile?.delete()
                 }
             }
         } else {

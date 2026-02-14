@@ -66,12 +66,20 @@ fun ConverterScreen(
         onResult = { uri -> uri?.let { viewModel.onFileSelected(it) } }
     )
 
+    // Launcher for saving the file (Scoped Storage)
+    val saveLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument(uiState.audioConfig.outputFormat.mimeType)
+    ) { uri ->
+        uri?.let { viewModel.saveFileToUri(it) }
+    }
+
     if (uiState.showSaveDialog) {
-        SaveFileDialog(
-            suggestedName = uiState.suggestedFileName,
-            onDismiss = { viewModel.cancelSave() },
-            onConfirm = { viewModel.convertToFormat(it) }
-        )
+        // Trigger system picker instead of custom dialog
+        // Side effect to launch the picker when the state flag is set
+        LaunchedEffect(Unit) {
+            saveLauncher.launch(uiState.suggestedFileName)
+            viewModel.cancelSave() // Reset flag immediately after launching
+        }
     }
 
     Column(
@@ -192,7 +200,7 @@ fun ConverterScreen(
                 }
 
                 AppButton(
-                    text = "Convert",
+                    text = "Convert & Save",
                     icon = Icons.Default.Transform,
                     onClick = { viewModel.requestSaveFileName() },
                     enabled = !uiState.isConverting && uiState.selectedFile != null,

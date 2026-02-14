@@ -38,10 +38,16 @@ class ConverterViewModel @Inject constructor(
             if (intent == null) return
             if (intent.action == com.rajatnagpure.pcmplayerconverter.service.ConversionService.ACTION_CONVERSION_COMPLETE) {
                 val success = intent.getBooleanExtra("success", false)
+                val outUriString = intent.getStringExtra("outUri")
                 val outPath = intent.getStringExtra("outFile")
                 // Clear converting flags and set message
                 viewModelScope.launch {
-                    _uiState.value = _uiState.value.copy(isConverting = false, conversionMessage = if (success) "Saved: ${outPath?.substringAfterLast('/')}" else "Conversion failed")
+                     val msg = if (success) {
+                         if (outUriString != null) "Saved to selected file" else "Saved: ${outPath?.substringAfterLast('/')}"
+                     } else {
+                         "Conversion failed"
+                     }
+                    _uiState.value = _uiState.value.copy(isConverting = false, conversionMessage = msg)
                 }
             }
         }
@@ -52,7 +58,11 @@ class ConverterViewModel @Inject constructor(
         val filter = IntentFilter().apply {
             addAction(com.rajatnagpure.pcmplayerconverter.service.ConversionService.ACTION_CONVERSION_COMPLETE)
         }
-        application.registerReceiver(conversionReceiver, filter)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            application.registerReceiver(conversionReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            application.registerReceiver(conversionReceiver, filter)
+        }
 
         viewModelScope.launch {
             savedStateHandle.getStateFlow("uri", "{uri}").collect { uriStr ->
@@ -126,6 +136,7 @@ class ConverterViewModel @Inject constructor(
         val file = _uiState.value.selectedFile ?: return
         val config = _uiState.value.audioConfig
         val defaultName = "${file.nameWithoutExtension}.${config.outputFormat.extension}"
+        // Set flag to true to trigger SideEffect in UI
         _uiState.value = _uiState.value.copy(showSaveDialog = true, suggestedFileName = defaultName)
     }
 
@@ -133,16 +144,14 @@ class ConverterViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(showSaveDialog = false)
     }
 
-    fun convertToFormat(fileName: String) {
+    fun saveFileToUri(outUri: Uri) {
         val inFile = _uiState.value.selectedFile ?: return
         val config = _uiState.value.audioConfig
         _uiState.value = _uiState.value.copy(showSaveDialog = false, isConverting = true)
 
-        val outFile = File(inFile.parent, fileName)
-        
         val intent = Intent(application, com.rajatnagpure.pcmplayerconverter.service.ConversionService::class.java).apply {
             putExtra("inFile", inFile)
-            putExtra("outFile", outFile)
+            putExtra("outUri", outUri.toString())
             putExtra("config", config)
         }
         
@@ -154,7 +163,6 @@ class ConverterViewModel @Inject constructor(
         
         // conversionMessage will be cleared when broadcast received
         _uiState.value = _uiState.value.copy(conversionMessage = "Conversion started in background...")
-        android.widget.Toast.makeText(application, "Saving to ${outFile.name}...", android.widget.Toast.LENGTH_SHORT).show()
     }
 
     fun togglePlay() {
