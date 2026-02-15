@@ -107,6 +107,7 @@ class IntentRoutingUITest {
         // For now, we verify the app doesn't crash and basic UI is present
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("PCM Converter").assertExists()
+        composeTestRule.onNodeWithText("test_file.pcm").assertExists()
         
         activityScenario.close()
         testFile.delete()
@@ -139,6 +140,10 @@ class IntentRoutingUITest {
         // Verify app doesn't crash and UI is present
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("PCM Converter").assertExists()
+        // Note: We might need to switch to Converter tab if it defaults to Generator for MP3,
+        // but the current implementation stays on the tab determined by intent logic.
+        // Let's verify file name is visible.
+        composeTestRule.onNodeWithText("test_audio.mp3").assertExists()
         
         activityScenario.close()
         testFile.delete()
