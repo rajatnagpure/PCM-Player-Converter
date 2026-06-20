@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.GraphicEq
-import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -213,8 +213,8 @@ fun AppNavigation(
                     actions = {
                         IconButton(onClick = { navController.navigate("help") }) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.HelpOutline, 
-                                contentDescription = "Help",
+                                imageVector = Icons.AutoMirrored.Filled.MenuBook, 
+                                contentDescription = "Education/Help",
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
