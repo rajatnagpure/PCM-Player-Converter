@@ -114,7 +114,7 @@ fun MusicPlayerScreen(
 
                 Spacer(modifier = Modifier.width(14.dp))
 
-                IconButton(
+                com.rajatnagpure.pcmplayerconverter.ui.components.AppIconButton(
                     onClick = onPlayPauseClick,
                     modifier = Modifier
                         .size(64.dp)
@@ -147,7 +147,7 @@ fun ControlIcon(
     contentDescription: String,
     onClick: () -> Unit
 ) {
-    IconButton(onClick = onClick, modifier = Modifier.size(42.dp)) {
+    com.rajatnagpure.pcmplayerconverter.ui.components.AppIconButton(onClick = onClick, modifier = Modifier.size(42.dp)) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,

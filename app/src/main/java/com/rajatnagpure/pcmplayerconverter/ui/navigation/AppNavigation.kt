@@ -212,7 +212,7 @@ fun AppNavigation(
                         }
                     },
                     navigationIcon = {
-                        IconButton(onClick = { coroutineScope.launch { drawerState.open() } }) {
+                        com.rajatnagpure.pcmplayerconverter.ui.components.AppIconButton(onClick = { coroutineScope.launch { drawerState.open() } }) {
                             Icon(
                                 imageVector = Icons.Filled.Menu,
                                 contentDescription = "Menu",
@@ -221,7 +221,7 @@ fun AppNavigation(
                         }
                     },
                     actions = {
-                        IconButton(onClick = { navController.navigate("help") }) {
+                        com.rajatnagpure.pcmplayerconverter.ui.components.AppIconButton(onClick = { navController.navigate("help") }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.MenuBook, 
                                 contentDescription = "Education/Help",
@@ -229,7 +229,7 @@ fun AppNavigation(
                             )
                         }
                         var showThemeDialog by remember { mutableStateOf(false) }
-                        IconButton(onClick = { showThemeDialog = true }) {
+                        com.rajatnagpure.pcmplayerconverter.ui.components.AppIconButton(onClick = { showThemeDialog = true }) {
                             Icon(
                                 imageVector = Icons.Default.Settings, 
                                 contentDescription = "Settings",
@@ -264,6 +264,7 @@ fun AppNavigation(
                         .neumorphic(cornerRadius = 24.dp),
                     containerColor = androidx.compose.ui.graphics.Color.Transparent
                 ) {
+                    val navView = androidx.compose.ui.platform.LocalView.current
                     items.forEachIndexed { index, item ->
                         NavigationBarItem(
                             icon = { Icon(icons[index], contentDescription = item) },
@@ -277,6 +278,7 @@ fun AppNavigation(
                                 unselectedTextColor = MaterialTheme.colorScheme.onSurface
                             ),
                             onClick = {
+                                navView.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
                                 if (selectedItem != index) {
                                     // Try to get current uri to persist it when switching tabs
                                     val currentUri = navBackStackEntry?.arguments?.getString("uri")

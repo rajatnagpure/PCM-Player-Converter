@@ -33,7 +33,7 @@ fun NeedHelpScreen(onBackClick: () -> Unit) {
             TopAppBar(
                 title = { Text("PCM Knowledge Base") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    com.rajatnagpure.pcmplayerconverter.ui.components.AppIconButton(onClick = onBackClick) {
                         Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },

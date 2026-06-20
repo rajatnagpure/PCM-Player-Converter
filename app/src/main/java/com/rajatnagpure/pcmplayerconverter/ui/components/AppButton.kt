@@ -27,6 +27,7 @@ fun AppButton(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    val view = androidx.compose.ui.platform.LocalView.current
     
     val contentColor = if (enabled) (overrideColor ?: MaterialTheme.colorScheme.primary) else Color.Gray.copy(alpha = 0.5f)
 
@@ -37,7 +38,10 @@ fun AppButton(
                 interactionSource = interactionSource,
                 indication = null,
                 enabled = enabled,
-                onClick = onClick
+                onClick = {
+                    view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                    onClick()
+                }
             )
             .padding(horizontal = 16.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center

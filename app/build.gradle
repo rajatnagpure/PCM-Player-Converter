@@ -13,8 +13,8 @@ android {
         applicationId "com.rajatnagpure.pcmplayerconverter"
         minSdkVersion 21
         targetSdkVersion 36
-        versionCode 8
-        versionName "6.2"
+        versionCode 9
+        versionName "7"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

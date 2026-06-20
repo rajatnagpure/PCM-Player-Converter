@@ -99,7 +99,7 @@ fun AudioPlayerSheet(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                IconButton(
+                com.rajatnagpure.pcmplayerconverter.ui.components.AppIconButton(
                     onClick = onTogglePlayback,
                     modifier = Modifier.size(64.dp)
                 ) {
@@ -113,7 +113,7 @@ fun AudioPlayerSheet(
                 
                 Spacer(modifier = Modifier.width(32.dp))
                 
-                IconButton(
+                com.rajatnagpure.pcmplayerconverter.ui.components.AppIconButton(
                     onClick = onDismiss,
                     modifier = Modifier.size(64.dp)
                 ) {

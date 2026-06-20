@@ -146,6 +146,7 @@ fun DropdownSelector(
     onOptionSelected: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val view = androidx.compose.ui.platform.LocalView.current
 
     Column(modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()) {
         Text(
@@ -159,7 +160,10 @@ fun DropdownSelector(
             modifier = Modifier
                 .fillMaxWidth()
                 .neumorphic(isPressed = true, cornerRadius = 12.dp)
-                .clickable { expanded = true }
+                .clickable { 
+                    view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                    expanded = true 
+                }
                 .padding(16.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -178,8 +182,9 @@ fun DropdownSelector(
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 options.forEach { option ->
                     DropdownMenuItem(
-                        text = { Text(option) },
+                        text = { Text(option.toString(), style = MaterialTheme.typography.bodyLarge) },
                         onClick = {
+                            view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
                             onOptionSelected(option)
                             expanded = false
                         }

@@ -27,11 +27,12 @@ fun ThemeSelectionDialog(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp)
-            ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
+        ) {
+            val view = androidx.compose.ui.platform.LocalView.current
                 Text(
                     text = "SELECT THEME",
                     style = MaterialTheme.typography.titleLarge,
@@ -46,6 +47,7 @@ fun ThemeSelectionDialog(
                             .fillMaxWidth()
                             .neumorphic(cornerRadius = 12.dp, isPressed = currentTheme == theme)
                             .clickable { 
+                                view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
                                 onThemeSelected(theme)
                                 onDismiss() 
                             }
@@ -54,6 +56,7 @@ fun ThemeSelectionDialog(
                         RadioButton(
                             selected = currentTheme == theme,
                             onClick = { 
+                                view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
                                 onThemeSelected(theme)
                                 onDismiss()
                             },
