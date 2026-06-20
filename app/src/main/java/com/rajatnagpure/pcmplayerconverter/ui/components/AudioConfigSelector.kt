@@ -1,35 +1,34 @@
 package com.rajatnagpure.pcmplayerconverter.ui.components
+import com.rajatnagpure.pcmplayerconverter.ui.components.AppText as Text
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
-import androidx.compose.ui.Alignment
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.ui.unit.dp
 import com.rajatnagpure.pcmplayerconverter.domain.model.AudioConfig
 import com.rajatnagpure.pcmplayerconverter.domain.model.PcmEncoding
 import com.rajatnagpure.pcmplayerconverter.domain.model.SUPPORTED_SAMPLE_RATES
+import com.rajatnagpure.pcmplayerconverter.ui.theme.neumorphism.neumorphic
 
 @Composable
 fun AudioConfigSelector(
@@ -59,27 +58,34 @@ fun AudioConfigSelector(
 
         // Custom Sample Rate Input
         if (isCustomSampleRate) {
-            OutlinedTextField(
-                value = config.sampleRate.toString(),
-                onValueChange = { newVal ->
-                    val filtered = newVal.filter { it.isDigit() }
-                    if (filtered.isNotEmpty()) {
-                        onConfigChange(config.copy(sampleRate = filtered.toInt()))
-                    } else {
-                        onConfigChange(config.copy(sampleRate = 0))
-                    }
-                },
-                label = { Text("Enter Custom Rate (Hz)", color = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue,
-                    unfocusedBorderColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue.copy(alpha = 0.5f),
-                    focusedLabelColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue,
-                    unfocusedLabelColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue.copy(alpha = 0.7f)
+            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                Text(
+                    text = "Enter Custom Rate (Hz)",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 4.dp, start = 4.dp)
                 )
-            )
+                BasicTextField(
+                    value = config.sampleRate.toString(),
+                    onValueChange = { newVal ->
+                        val filtered = newVal.filter { it.isDigit() }
+                        if (filtered.isNotEmpty()) {
+                            onConfigChange(config.copy(sampleRate = filtered.toInt()))
+                        } else {
+                            onConfigChange(config.copy(sampleRate = 0))
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    textStyle = androidx.compose.ui.text.TextStyle(
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = MaterialTheme.typography.bodyLarge.fontSize
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .neumorphic(isPressed = true, cornerRadius = 12.dp)
+                        .padding(16.dp)
+                )
+            }
         }
 
         // Channels Dropdown
@@ -118,7 +124,11 @@ fun AudioConfigSelector(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
              ) {
-                 Text(text = "Variable Bitrate (VBR)", modifier = Modifier.weight(1f))
+                 Text(
+                     text = "Variable Bitrate (VBR)",
+                     modifier = Modifier.weight(1f),
+                     color = MaterialTheme.colorScheme.onSurface
+                 )
                  Switch(
                      checked = config.enableVbr,
                      onCheckedChange = { onConfigChange(config.copy(enableVbr = it)) }
@@ -137,40 +147,44 @@ fun DropdownSelector(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()) {
-        OutlinedTextField(
-            value = selectedOption,
-            onValueChange = {},
-            label = { Text(label, color = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue) },
-            readOnly = true,
-            trailingIcon = {
-                Icon(Icons.Default.ArrowDropDown, "Dropdown", tint = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue)
-            },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue,
-                unfocusedBorderColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue.copy(alpha = 0.5f),
-                focusedLabelColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue,
-                unfocusedLabelColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue.copy(alpha = 0.7f)
-            ),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-            modifier = Modifier.fillMaxWidth()
-        )
-        // Invisible clickable surface
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .clickable { expanded = true }
+    Column(modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(bottom = 4.dp, start = 4.dp)
         )
         
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(option) },
-                    onClick = {
-                        onOptionSelected(option)
-                        expanded = false
-                    }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .neumorphic(isPressed = true, cornerRadius = 12.dp)
+                .clickable { expanded = true }
+                .padding(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = selectedOption,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
                 )
+                Icon(
+                    Icons.Default.ArrowDropDown,
+                    contentDescription = "Dropdown",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                options.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        onClick = {
+                            onOptionSelected(option)
+                            expanded = false
+                        }
+                    )
+                }
             }
         }
     }

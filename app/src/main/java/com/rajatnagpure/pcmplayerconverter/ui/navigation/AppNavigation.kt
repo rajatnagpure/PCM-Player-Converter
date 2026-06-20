@@ -1,4 +1,10 @@
 package com.rajatnagpure.pcmplayerconverter.ui.navigation
+import com.rajatnagpure.pcmplayerconverter.ui.components.AppText as Text
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Code
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
@@ -24,6 +30,13 @@ import com.rajatnagpure.pcmplayerconverter.ui.viewmodel.MainViewModel
 
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import kotlinx.coroutines.flow.first
+
+import com.rajatnagpure.pcmplayerconverter.ui.theme.neumorphism.neumorphic
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,6 +103,10 @@ fun AppNavigation(
     val currentRoutePattern = navBackStackEntry?.destination?.route
     val isHelpScreen = currentRoutePattern == "help"
 
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+
     // Derive selected tab from current route base (ignore query params)
     val currentRouteBase = currentRoutePattern?.substringBefore("?")
     val selectedItem = when (currentRouteBase) {
@@ -105,31 +122,111 @@ fun AppNavigation(
         val items = listOf("Converter", "Generator")
         val icons = listOf(Icons.Filled.Audiotrack, Icons.Filled.GraphicEq)
 
-        Scaffold(
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            drawerContent = {
+                ModalDrawerSheet(
+                    modifier = Modifier.padding(end = 64.dp).neumorphic(cornerRadius = 16.dp),
+                    drawerContainerColor = MaterialTheme.colorScheme.surface,
+                    drawerShape = androidx.compose.foundation.shape.RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
+                ) {
+                    Spacer(Modifier.height(32.dp))
+                    androidx.compose.foundation.layout.Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        androidx.compose.foundation.Image(
+                            painter = androidx.compose.ui.res.painterResource(id = com.rajatnagpure.pcmplayerconverter.R.mipmap.ic_launcher),
+                            contentDescription = "App Logo",
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(Modifier.width(16.dp))
+                        Text(
+                            text = com.rajatnagpure.pcmplayerconverter.config.AppConfig.APP_NAME,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    Spacer(Modifier.height(32.dp))
+                    
+                    val drawerItems = listOf(
+                        Triple("More Apps", Icons.Default.Apps, Intent(Intent.ACTION_VIEW, Uri.parse(com.rajatnagpure.pcmplayerconverter.config.AppConfig.DEVELOPER_PLAYSTORE_SEARCH_URL))),
+                        Triple("Share App", Icons.Default.Share, Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_TEXT, com.rajatnagpure.pcmplayerconverter.config.AppConfig.APP_SHARE_TEXT_PREFIX)
+                            type = "text/plain"
+                        }.let { Intent.createChooser(it, null) }),
+                        Triple("Request Feature", Icons.Default.BugReport, Intent(Intent.ACTION_VIEW, Uri.parse(com.rajatnagpure.pcmplayerconverter.config.AppConfig.FEATURE_REQUEST_FORM_URL))),
+                        Triple("Rate on Playstore", Icons.Default.Star, Intent(Intent.ACTION_VIEW, Uri.parse(com.rajatnagpure.pcmplayerconverter.config.AppConfig.APP_PLAYSTORE_DETAILS_URL))),
+                        Triple("Contribute", Icons.Default.Code, Intent(Intent.ACTION_VIEW, Uri.parse(com.rajatnagpure.pcmplayerconverter.config.AppConfig.GITHUB_REPO_URL)))
+                    )
+
+                    drawerItems.forEach { (label, icon, intent) ->
+                        com.rajatnagpure.pcmplayerconverter.ui.components.AppButton(
+                            text = label,
+                            icon = icon,
+                            onClick = {
+                                coroutineScope.launch { drawerState.close() }
+                                context.startActivity(intent)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
+                }
+            }
+        ) {
+            Scaffold(
             topBar = {
                 CenterAlignedTopAppBar(
-                    title = { Text("PCM Converter") },
+                    title = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "PCM ",
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = "Converter",
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Light,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { coroutineScope.launch { drawerState.open() } }) {
+                            Icon(
+                                imageVector = Icons.Filled.Menu,
+                                contentDescription = "Menu",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    },
                     actions = {
                         IconButton(onClick = { navController.navigate("help") }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.HelpOutline, 
                                 contentDescription = "Help",
-                                tint = MaterialTheme.colorScheme.onPrimary
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     },
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        scrolledContainerColor = MaterialTheme.colorScheme.primary,
-                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surface,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSurface
                     ),
-                    modifier = Modifier.shadow(0.5.dp)
+                    modifier = Modifier.neumorphic(cornerRadius = 0.dp)
                 )
             },
             bottomBar = {
-                NavigationBar {
+                NavigationBar(
+                    modifier = Modifier.neumorphic(cornerRadius = 0.dp),
+                    containerColor = MaterialTheme.colorScheme.surface
+                ) {
                     items.forEachIndexed { index, item ->
                         NavigationBarItem(
                             icon = { Icon(icons[index], contentDescription = item) },
@@ -138,7 +235,9 @@ fun AppNavigation(
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.onPrimary,
                                 selectedTextColor = MaterialTheme.colorScheme.primary,
-                                indicatorColor = MaterialTheme.colorScheme.primary
+                                indicatorColor = MaterialTheme.colorScheme.primary,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurface,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurface
                             ),
                             onClick = {
                                 if (selectedItem != index) {
@@ -200,6 +299,7 @@ fun AppNavigation(
                     }
                 }
             }
+        }
         }
     }
 }

@@ -19,4 +19,8 @@
         <!-- Support library compatibility -->
         <item name="background">@null</item>
     </style>
+
+    <style name="Theme.PCMPlayerConverter.Splash" parent="Theme.PCMPlayerConverter">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+    </style>
 </resources>

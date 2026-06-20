@@ -1,4 +1,5 @@
 package com.rajatnagpure.pcmplayerconverter.ui.screens
+import com.rajatnagpure.pcmplayerconverter.ui.components.AppText as Text
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -35,7 +36,7 @@ import androidx.compose.foundation.Canvas
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import com.rajatnagpure.pcmplayerconverter.ui.components.AppButton
-import com.rajatnagpure.pcmplayerconverter.ui.components.AppCard
+import com.rajatnagpure.pcmplayerconverter.ui.components.NeuCard
 import com.rajatnagpure.pcmplayerconverter.ui.components.AppDialog
 import com.rajatnagpure.pcmplayerconverter.ui.components.AudioConfigSelector
 import com.rajatnagpure.pcmplayerconverter.ui.viewmodel.GeneratorViewModel
@@ -124,11 +125,11 @@ fun GeneratorScreen(
         Text(
             "Recording Configuration",
             style = MaterialTheme.typography.titleMedium,
-            color = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue,
-            modifier = Modifier.align(Alignment.Start)
+            color = com.rajatnagpure.pcmplayerconverter.ui.theme.NeuPurple,
+            modifier = Modifier.padding(bottom = 8.dp, start = 8.dp)
         )
 
-        AppCard {
+        NeuCard {
             AudioConfigSelector(
                 config = uiState.audioConfig,
                 onConfigChange = { viewModel.updateConfig(it) }
@@ -163,7 +164,7 @@ fun GeneratorScreen(
         }
 
         // Consolidated Area: Status, Waveform OR File info
-        AppCard(reverseGradient = true) {
+        NeuCard {
                 if (uiState.isRecording) {
                     StringWaveformView(amplitude = uiState.currentAmplitude)
                     Spacer(modifier = Modifier.height(16.dp))

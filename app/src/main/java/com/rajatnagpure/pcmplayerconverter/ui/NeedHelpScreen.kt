@@ -1,4 +1,5 @@
 package com.rajatnagpure.pcmplayerconverter.ui
+import com.rajatnagpure.pcmplayerconverter.ui.components.AppText as Text
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState

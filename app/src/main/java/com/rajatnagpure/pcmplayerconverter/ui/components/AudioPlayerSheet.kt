@@ -1,4 +1,5 @@
 package com.rajatnagpure.pcmplayerconverter.ui.components
+import com.rajatnagpure.pcmplayerconverter.ui.components.AppText as Text
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

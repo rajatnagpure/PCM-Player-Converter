@@ -1,4 +1,5 @@
 package com.rajatnagpure.pcmplayerconverter.ui.theme
+import com.rajatnagpure.pcmplayerconverter.ui.components.AppText as Text
 
 import androidx.compose.ui.graphics.Color
 
@@ -16,3 +17,10 @@ val ButtonText = Color.White
 
 val SurfaceLight = Color(0xFFFDFDFD)
 val SurfaceDark = Color(0xFF1E1E1E)
+
+// Neumorphism Colors
+val NeuBackground = Color(0xFF22262E) // Darker for more contrast
+val NeuLightShadow = Color(0xFF353B47) // Light enough to show an edge
+val NeuDarkShadow = Color(0xFF131519) // Very dark for deep extrusion
+val NeuLightBlue = Color(0xFF00E5FF)
+val NeuPurple = Color(0xFF9b5de5)

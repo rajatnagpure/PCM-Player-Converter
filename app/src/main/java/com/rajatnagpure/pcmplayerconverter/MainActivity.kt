@@ -29,6 +29,7 @@ class MainActivity : ComponentActivity() {
     private val _intentRouteEvent = androidx.compose.runtime.mutableStateOf<IntentRouteEvent?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_PCMPlayerConverter)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         

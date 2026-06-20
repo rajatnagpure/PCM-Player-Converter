@@ -1,4 +1,5 @@
 package com.rajatnagpure.pcmplayerconverter.ui.screens
+import com.rajatnagpure.pcmplayerconverter.ui.components.AppText as Text
 
 import android.content.Intent
 import android.net.Uri
@@ -30,7 +31,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import com.rajatnagpure.pcmplayerconverter.ui.components.AppButton
-import com.rajatnagpure.pcmplayerconverter.ui.components.AppCard
+import com.rajatnagpure.pcmplayerconverter.ui.components.NeuCard
 import com.rajatnagpure.pcmplayerconverter.ui.components.AudioConfigSelector
 import com.rajatnagpure.pcmplayerconverter.ui.viewmodel.ConverterViewModel
 import com.rajatnagpure.pcmplayerconverter.ui.theme.GradientStart
@@ -91,11 +92,11 @@ fun ConverterScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // File Selection Section
-        AppCard {
+        NeuCard {
             Text(
                 text = "Input File",
                 style = MaterialTheme.typography.labelLarge,
-                color = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue
+                color = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.height(8.dp))
             Row(
@@ -127,16 +128,16 @@ fun ConverterScreen(
             }
         }
 
-        HorizontalDivider(color = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue.copy(alpha = 0.1f))
+        HorizontalDivider(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
         
         Text(
             text = "Output Configuration",
             style = MaterialTheme.typography.titleMedium,
-            color = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue,
-            modifier = Modifier.align(Alignment.Start)
+            color = com.rajatnagpure.pcmplayerconverter.ui.theme.NeuPurple,
+            modifier = Modifier.padding(bottom = 8.dp, start = 8.dp)
         )
 
-        AppCard(reverseGradient = true) {
+        NeuCard {
             AudioConfigSelector(
                 config = uiState.audioConfig,
                 onConfigChange = { viewModel.updateConfig(it) }
@@ -163,7 +164,7 @@ fun ConverterScreen(
             if (uiState.conversionMessage != null) {
                 Text(
                     text = uiState.conversionMessage ?: "",
-                    color = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue,
+                    color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
@@ -181,23 +182,13 @@ fun ConverterScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                OutlinedButton(
+                AppButton(
+                    text = if (uiState.isPlaying) "Stop" else "Play Input",
+                    icon = if (uiState.isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
                     onClick = { viewModel.togglePlay() },
                     enabled = !uiState.isConverting && uiState.selectedFile != null,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(8.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue.copy(alpha = 0.5f)),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue),
-                    contentPadding = PaddingValues(12.dp)
-                ) {
-                    Icon(
-                        imageVector = if (uiState.isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(if (uiState.isPlaying) "Stop" else "Play Input")
-                }
+                    modifier = Modifier.weight(1f)
+                )
 
                 AppButton(
                     text = "Convert & Save",
