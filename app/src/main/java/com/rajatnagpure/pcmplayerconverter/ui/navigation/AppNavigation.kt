@@ -132,21 +132,27 @@ fun AppNavigation(
                     drawerShape = androidx.compose.foundation.shape.RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
                 ) {
                     Spacer(Modifier.height(32.dp))
-                    androidx.compose.foundation.layout.Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 16.dp)
+                    com.rajatnagpure.pcmplayerconverter.ui.components.NeuCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
                     ) {
-                        androidx.compose.foundation.Image(
-                            painter = androidx.compose.ui.res.painterResource(id = com.rajatnagpure.pcmplayerconverter.R.mipmap.ic_launcher),
-                            contentDescription = "App Logo",
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Spacer(Modifier.width(16.dp))
-                        Text(
-                            text = com.rajatnagpure.pcmplayerconverter.config.AppConfig.APP_NAME,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        androidx.compose.foundation.layout.Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            androidx.compose.foundation.Image(
+                                painter = androidx.compose.ui.res.painterResource(id = com.rajatnagpure.pcmplayerconverter.R.mipmap.ic_launcher),
+                                contentDescription = "App Logo",
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(Modifier.width(16.dp))
+                            Text(
+                                text = com.rajatnagpure.pcmplayerconverter.config.AppConfig.APP_NAME,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                     Spacer(Modifier.height(32.dp))
                     
@@ -230,19 +236,23 @@ fun AppNavigation(
                         }
                     },
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        scrolledContainerColor = MaterialTheme.colorScheme.surface,
+                        containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                        scrolledContainerColor = androidx.compose.ui.graphics.Color.Transparent,
                         navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
                         titleContentColor = MaterialTheme.colorScheme.onSurface,
                         actionIconContentColor = MaterialTheme.colorScheme.onSurface
                     ),
-                    modifier = Modifier.neumorphic(cornerRadius = 0.dp)
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .neumorphic(cornerRadius = 24.dp)
                 )
             },
             bottomBar = {
                 NavigationBar(
-                    modifier = Modifier.neumorphic(cornerRadius = 0.dp),
-                    containerColor = MaterialTheme.colorScheme.surface
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 16.dp)
+                        .neumorphic(cornerRadius = 24.dp),
+                    containerColor = androidx.compose.ui.graphics.Color.Transparent
                 ) {
                     items.forEachIndexed { index, item ->
                         NavigationBarItem(
