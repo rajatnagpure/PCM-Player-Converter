@@ -38,6 +38,7 @@ class MainActivity : ComponentActivity() {
         setTheme(R.style.Theme_PCMPlayerConverter)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        com.rajatnagpure.pcmplayerconverter.util.HapticsManager.load(this)
         
         setContent {
             val currentTheme by viewModel.currentTheme.collectAsState()

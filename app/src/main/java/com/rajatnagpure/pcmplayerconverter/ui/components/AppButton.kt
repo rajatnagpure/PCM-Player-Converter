@@ -39,7 +39,7 @@ fun AppButton(
                 indication = null,
                 enabled = enabled,
                 onClick = {
-                    view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                    com.rajatnagpure.pcmplayerconverter.util.HapticsManager.perform(view)
                     onClick()
                 }
             )

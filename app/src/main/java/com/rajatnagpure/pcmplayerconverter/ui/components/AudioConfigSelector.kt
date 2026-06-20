@@ -161,7 +161,7 @@ fun DropdownSelector(
                 .fillMaxWidth()
                 .neumorphic(isPressed = true, cornerRadius = 12.dp)
                 .clickable { 
-                    view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                    com.rajatnagpure.pcmplayerconverter.util.HapticsManager.perform(view)
                     expanded = true 
                 }
                 .padding(16.dp)
@@ -184,7 +184,7 @@ fun DropdownSelector(
                     DropdownMenuItem(
                         text = { Text(option.toString(), style = MaterialTheme.typography.bodyLarge) },
                         onClick = {
-                            view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                            com.rajatnagpure.pcmplayerconverter.util.HapticsManager.perform(view)
                             onOptionSelected(option)
                             expanded = false
                         }

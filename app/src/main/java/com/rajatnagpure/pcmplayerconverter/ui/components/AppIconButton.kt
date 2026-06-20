@@ -19,7 +19,7 @@ fun AppIconButton(
     val view = LocalView.current
     IconButton(
         onClick = {
-            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            com.rajatnagpure.pcmplayerconverter.util.HapticsManager.perform(view)
             onClick()
         },
         modifier = modifier,

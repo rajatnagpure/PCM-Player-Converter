@@ -33,7 +33,7 @@ fun ExpandableNeuCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { 
-                        view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                        com.rajatnagpure.pcmplayerconverter.util.HapticsManager.perform(view)
                         expanded = !expanded 
                     }
                     .padding(16.dp),

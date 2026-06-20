@@ -134,6 +134,8 @@ fun AppNavigation(
                     drawerContainerColor = MaterialTheme.colorScheme.surface,
                     drawerShape = androidx.compose.foundation.shape.RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
                 ) {
+                    val neuTheme = com.rajatnagpure.pcmplayerconverter.ui.theme.LocalNeuTheme.current
+                    val drawerSecondaryColor = neuTheme.onSurface
                     Spacer(Modifier.height(32.dp))
                     com.rajatnagpure.pcmplayerconverter.ui.components.NeuCard(
                         modifier = Modifier
@@ -155,7 +157,7 @@ fun AppNavigation(
                                     withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                                         append("PCM\n")
                                     }
-                                    withStyle(style = SpanStyle(color = androidx.compose.ui.graphics.Color.White)) {
+                                    withStyle(style = SpanStyle(color = drawerSecondaryColor)) {
                                         append("CONVERTER")
                                     }
                                 },
@@ -185,7 +187,7 @@ fun AppNavigation(
                                 coroutineScope.launch { drawerState.close() }
                                 context.startActivity(intent)
                             },
-                            iconColor = androidx.compose.ui.graphics.Color.White,
+                            iconColor = drawerSecondaryColor,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -278,7 +280,7 @@ fun AppNavigation(
                                 unselectedTextColor = MaterialTheme.colorScheme.onSurface
                             ),
                             onClick = {
-                                navView.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                                com.rajatnagpure.pcmplayerconverter.util.HapticsManager.perform(navView)
                                 if (selectedItem != index) {
                                     // Try to get current uri to persist it when switching tabs
                                     val currentUri = navBackStackEntry?.arguments?.getString("uri")

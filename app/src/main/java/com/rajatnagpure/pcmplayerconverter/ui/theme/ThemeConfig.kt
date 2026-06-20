@@ -3,7 +3,7 @@ package com.rajatnagpure.pcmplayerconverter.ui.theme
 import androidx.compose.ui.graphics.Color
 
 enum class NeuTheme(val title: String) {
-    CYBERPUNK("Cyberpunk"),
+    CYBERPUNK("Azure"),
     MIDNIGHT("Midnight"),
     DAYLIGHT("Daylight"),
     SUNRISE("Sunrise")
