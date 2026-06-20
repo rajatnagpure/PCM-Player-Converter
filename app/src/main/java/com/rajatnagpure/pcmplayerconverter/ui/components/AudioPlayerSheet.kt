@@ -1,26 +1,28 @@
 package com.rajatnagpure.pcmplayerconverter.ui.components
 import com.rajatnagpure.pcmplayerconverter.ui.components.AppText as Text
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.rajatnagpure.pcmplayerconverter.ui.theme.Blue80
-import com.rajatnagpure.pcmplayerconverter.ui.theme.Pink80
-import com.rajatnagpure.pcmplayerconverter.ui.theme.DarkBlue
+import com.rajatnagpure.pcmplayerconverter.ui.theme.neumorphism.neumorphic
 import java.io.File
 
 @Composable
@@ -36,95 +38,135 @@ fun AudioPlayerSheet(
 ) {
     if (file == null) return
 
-    val gradient = Brush.linearGradient(
-        colors = listOf(Pink80, Blue80)
-    )
-
-    Card(
+    NeuCard(
         modifier = modifier
             .fillMaxWidth()
-            .aspectRatio(1f),
-        shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .wrapContentHeight(),
+        cornerRadius = 28.dp,
+        contentPadding = 24.dp
     ) {
         Column(
-            modifier = Modifier
-                .background(gradient)
-                .padding(24.dp)
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceEvenly
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+            // Header Label
+            Text(
+                text = "NOW PLAYING",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            // Tactile Inset Icon Container for the Music Note
+            Box(
+                modifier = Modifier
+                    .size(110.dp)
+                    .neumorphic(isPressed = true, cornerRadius = 55.dp)
+                    .padding(8.dp),
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.MusicNote,
                     contentDescription = null,
-                    tint = DarkBlue,
-                    modifier = Modifier.size(64.dp)
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Text(
-                    text = "Now Playing",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = DarkBlue.copy(alpha = 0.8f)
-                )
-                Text(
-                    text = file.name,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = DarkBlue,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(48.dp)
                 )
             }
-            
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // File Name
+            Text(
+                text = file.name,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Neumorphic / Custom Slider
             Slider(
                 value = progress,
                 onValueChange = onProgressChange,
                 colors = SliderDefaults.colors(
-                    thumbColor = DarkBlue,
-                    activeTrackColor = DarkBlue,
-                    inactiveTrackColor = DarkBlue.copy(alpha = 0.3f)
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                    inactiveTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f)
                 ),
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
             )
-            
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Circular Playback Control Buttons Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                com.rajatnagpure.pcmplayerconverter.ui.components.AppIconButton(
+                // Play / Pause Button
+                NeuCircleButton(
                     onClick = onTogglePlayback,
-                    modifier = Modifier.size(64.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isPlaying && !isPaused) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = if (isPlaying && !isPaused) "Pause" else "Play",
-                        tint = DarkBlue,
-                        modifier = Modifier.size(48.dp)
-                    )
-                }
-                
-                Spacer(modifier = Modifier.width(32.dp))
-                
-                com.rajatnagpure.pcmplayerconverter.ui.components.AppIconButton(
+                    icon = if (isPlaying && !isPaused) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    contentDescription = if (isPlaying && !isPaused) "Pause" else "Play",
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                    iconSize = 32.dp
+                )
+
+                Spacer(modifier = Modifier.width(28.dp))
+
+                // Close Button
+                NeuCircleButton(
                     onClick = onDismiss,
-                    modifier = Modifier.size(64.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Dismiss",
-                        tint = DarkBlue,
-                        modifier = Modifier.size(48.dp)
-                    )
-                }
+                    icon = Icons.Default.Close,
+                    contentDescription = "Dismiss",
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    iconSize = 28.dp
+                )
             }
         }
+    }
+}
+
+@Composable
+private fun NeuCircleButton(
+    onClick: () -> Unit,
+    icon: ImageVector,
+    contentDescription: String,
+    modifier: Modifier = Modifier,
+    tint: Color = MaterialTheme.colorScheme.primary,
+    iconSize: Dp = 28.dp
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val view = LocalView.current
+
+    Box(
+        modifier = modifier
+            .neumorphic(isPressed = isPressed, cornerRadius = 32.dp)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = {
+                    com.rajatnagpure.pcmplayerconverter.util.HapticsManager.perform(view)
+                    onClick()
+                }
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = tint,
+            modifier = Modifier.size(iconSize)
+        )
     }
 }
