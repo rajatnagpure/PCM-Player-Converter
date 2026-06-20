@@ -14,10 +14,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collect
 
+import com.rajatnagpure.pcmplayerconverter.data.repository.ThemeRepository
+import com.rajatnagpure.pcmplayerconverter.ui.theme.NeuTheme
+
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val pcmPlayer: PcmPlayer
+    private val pcmPlayer: PcmPlayer,
+    private val themeRepository: ThemeRepository
 ) : ViewModel() {
+
+    val currentTheme: StateFlow<NeuTheme> = themeRepository.currentTheme
 
     private val _isPlayerVisible = kotlinx.coroutines.flow.MutableStateFlow(false)
     val isPlayerVisible: StateFlow<Boolean> = _isPlayerVisible.asStateFlow()
@@ -74,5 +80,9 @@ class MainViewModel @Inject constructor(
 
     fun seekTo(progress: Float) {
         pcmPlayer.seekTo(progress)
+    }
+
+    fun setTheme(theme: NeuTheme) {
+        themeRepository.setTheme(theme)
     }
 }

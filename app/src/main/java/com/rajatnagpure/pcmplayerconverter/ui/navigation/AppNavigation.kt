@@ -5,6 +5,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Settings
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
@@ -209,6 +210,22 @@ fun AppNavigation(
                                 imageVector = Icons.AutoMirrored.Filled.HelpOutline, 
                                 contentDescription = "Help",
                                 tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        var showThemeDialog by remember { mutableStateOf(false) }
+                        IconButton(onClick = { showThemeDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Settings, 
+                                contentDescription = "Settings",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        
+                        if (showThemeDialog) {
+                            com.rajatnagpure.pcmplayerconverter.ui.components.ThemeSelectionDialog(
+                                currentTheme = mainViewModel.currentTheme.collectAsState().value,
+                                onThemeSelected = { mainViewModel.setTheme(it) },
+                                onDismiss = { showThemeDialog = false }
                             )
                         }
                     },

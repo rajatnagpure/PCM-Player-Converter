@@ -18,9 +18,17 @@ val ButtonText = Color.White
 val SurfaceLight = Color(0xFFFDFDFD)
 val SurfaceDark = Color(0xFF1E1E1E)
 
-// Neumorphism Colors
-val NeuBackground = Color(0xFF22262E) // Darker for more contrast
-val NeuLightShadow = Color(0xFF353B47) // Light enough to show an edge
-val NeuDarkShadow = Color(0xFF131519) // Very dark for deep extrusion
-val NeuLightBlue = Color(0xFF00E5FF)
-val NeuPurple = Color(0xFF9b5de5)
+// Neumorphism Colors - Dark Mode
+val NeuDarkBg = Color(0xFF22262E) // Darker for more contrast
+val NeuDarkShadowLight = Color(0xFF353B47) // Light enough to show an edge
+val NeuDarkShadowDark = Color(0xFF131519) // Very dark for deep extrusion
+
+// Neumorphism Colors - Light Mode
+val NeuLightBg = Color(0xFFE0E5EC)
+val NeuLightShadowLight = Color(0xFFFFFFFF)
+val NeuLightShadowDark = Color(0xFFA3B1C6)
+
+// Accent Colors
+val NeuAzureBlue = Color(0xFF007FFF) // Cyberpunk / Daylight Accent
+val NeuViolet = Color(0xFF9b5de5) // Midnight Accent
+val NeuSunriseOrange = Color(0xFFFF6B6B) // Sunrise Accent

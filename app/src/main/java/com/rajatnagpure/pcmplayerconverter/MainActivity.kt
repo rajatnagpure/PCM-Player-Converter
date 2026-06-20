@@ -11,10 +11,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.activity.viewModels
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.rajatnagpure.pcmplayerconverter.ui.navigation.AppNavigation
+import com.rajatnagpure.pcmplayerconverter.ui.viewmodel.MainViewModel
 import com.rajatnagpure.pcmplayerconverter.ui.theme.PCMPlayerConverterTheme
 import dagger.hilt.android.AndroidEntryPoint
 import java.net.URLEncoder
@@ -27,6 +31,8 @@ class MainActivity : ComponentActivity() {
     data class IntentRouteEvent(val route: String, val timestamp: Long = System.currentTimeMillis())
     
     private val _intentRouteEvent = androidx.compose.runtime.mutableStateOf<IntentRouteEvent?>(null)
+    
+    private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.Theme_PCMPlayerConverter)
@@ -34,7 +40,15 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         
         setContent {
-            PCMPlayerConverterTheme {
+            val currentTheme by viewModel.currentTheme.collectAsState()
+            val neuThemeConfig = when (currentTheme) {
+                com.rajatnagpure.pcmplayerconverter.ui.theme.NeuTheme.CYBERPUNK -> com.rajatnagpure.pcmplayerconverter.ui.theme.CyberpunkTheme
+                com.rajatnagpure.pcmplayerconverter.ui.theme.NeuTheme.MIDNIGHT -> com.rajatnagpure.pcmplayerconverter.ui.theme.MidnightTheme
+                com.rajatnagpure.pcmplayerconverter.ui.theme.NeuTheme.DAYLIGHT -> com.rajatnagpure.pcmplayerconverter.ui.theme.DaylightTheme
+                com.rajatnagpure.pcmplayerconverter.ui.theme.NeuTheme.SUNRISE -> com.rajatnagpure.pcmplayerconverter.ui.theme.SunriseTheme
+            }
+            
+            PCMPlayerConverterTheme(neuThemeConfig = neuThemeConfig) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

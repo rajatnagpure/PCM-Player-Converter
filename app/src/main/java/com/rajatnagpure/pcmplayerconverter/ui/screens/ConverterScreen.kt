@@ -133,7 +133,7 @@ fun ConverterScreen(
         Text(
             text = "Output Configuration",
             style = MaterialTheme.typography.titleMedium,
-            color = com.rajatnagpure.pcmplayerconverter.ui.theme.NeuPurple,
+            color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(bottom = 8.dp, start = 8.dp)
         )
 

@@ -16,38 +16,49 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// Enforce Dark Theme exclusively
-private val DarkColorScheme = darkColorScheme(
-    primary = NeuLightBlue,
-    secondary = NeuLightBlue,
-    tertiary = NeuLightBlue,
-    background = NeuBackground,
-    surface = NeuBackground,
-    onPrimary = androidx.compose.ui.graphics.Color.White,
-    onSecondary = androidx.compose.ui.graphics.Color.White,
-    onTertiary = androidx.compose.ui.graphics.Color.White,
-    onBackground = androidx.compose.ui.graphics.Color.White,
-    onSurface = androidx.compose.ui.graphics.Color.White,
-)
-
 @Composable
 fun PCMPlayerConverterTheme(
-    darkTheme: Boolean = true, // Force Dark Theme
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = false, // Disable dynamic color to enforce our gradient branding
+    neuThemeConfig: NeuThemeConfig = CyberpunkTheme,
     content: @Composable () -> Unit
 ) {
-    // ALWAYS use DarkColorScheme
-    val colorScheme = DarkColorScheme
+    val colorScheme = if (neuThemeConfig.isDark) {
+        darkColorScheme(
+            primary = neuThemeConfig.primary,
+            secondary = neuThemeConfig.primary,
+            tertiary = neuThemeConfig.primary,
+            background = neuThemeConfig.background,
+            surface = neuThemeConfig.background,
+            onPrimary = androidx.compose.ui.graphics.Color.White,
+            onSecondary = androidx.compose.ui.graphics.Color.White,
+            onTertiary = androidx.compose.ui.graphics.Color.White,
+            onBackground = neuThemeConfig.onSurface,
+            onSurface = neuThemeConfig.onSurface,
+        )
+    } else {
+        lightColorScheme(
+            primary = neuThemeConfig.primary,
+            secondary = neuThemeConfig.primary,
+            tertiary = neuThemeConfig.primary,
+            background = neuThemeConfig.background,
+            surface = neuThemeConfig.background,
+            onPrimary = androidx.compose.ui.graphics.Color.White,
+            onSecondary = androidx.compose.ui.graphics.Color.White,
+            onTertiary = androidx.compose.ui.graphics.Color.White,
+            onBackground = neuThemeConfig.onSurface,
+            onSurface = neuThemeConfig.onSurface,
+        )
+    }
 
     val view = LocalView.current
     if (!view.isInEditMode) {
         // Edge-to-Edge is handled by MainActivity.kt
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    androidx.compose.runtime.CompositionLocalProvider(LocalNeuTheme provides neuThemeConfig) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }
