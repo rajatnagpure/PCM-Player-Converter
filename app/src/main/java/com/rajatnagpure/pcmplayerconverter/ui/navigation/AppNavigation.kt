@@ -1,4 +1,7 @@
 package com.rajatnagpure.pcmplayerconverter.ui.navigation
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.SpanStyle
 import com.rajatnagpure.pcmplayerconverter.ui.components.AppText as Text
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Share
@@ -142,15 +145,21 @@ fun AppNavigation(
                             modifier = Modifier.padding(16.dp)
                         ) {
                             androidx.compose.foundation.Image(
-                                painter = androidx.compose.ui.res.painterResource(id = com.rajatnagpure.pcmplayerconverter.R.mipmap.ic_launcher),
+                                painter = androidx.compose.ui.res.painterResource(id = com.rajatnagpure.pcmplayerconverter.R.drawable.drawer_logo),
                                 contentDescription = "App Logo",
-                                modifier = Modifier.size(48.dp)
+                                modifier = Modifier.size(80.dp)
                             )
                             Spacer(Modifier.width(16.dp))
                             Text(
-                                text = com.rajatnagpure.pcmplayerconverter.config.AppConfig.APP_NAME,
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.primary
+                                text = buildAnnotatedString {
+                                    withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                                        append("PCM\n")
+                                    }
+                                    withStyle(style = SpanStyle(color = androidx.compose.ui.graphics.Color.White)) {
+                                        append("CONVERTER")
+                                    }
+                                },
+                                style = MaterialTheme.typography.titleLarge
                             )
                         }
                     }
@@ -176,6 +185,7 @@ fun AppNavigation(
                                 coroutineScope.launch { drawerState.close() }
                                 context.startActivity(intent)
                             },
+                            iconColor = androidx.compose.ui.graphics.Color.White,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 8.dp)

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Outer Neumorphic Circle (Dark Shadow) -->
+    <path
+        android:pathData="M 54 18 C 34.118 18 18 34.118 18 54 C 18 73.882 34.118 90 54 90 C 73.882 90 90 73.882 90 54 C 90 34.118 73.882 18 54 18 Z"
+        android:fillColor="#1A1C20" />
+
+    <!-- Outer Neumorphic Circle (Light Shadow) -->
+    <path
+        android:pathData="M 54 16 C 33.013 16 16 33.013 16 54 C 16 74.987 33.013 92 54 92 C 74.987 92 92 74.987 92 54 C 92 33.013 74.987 16 54 16 Z"
+        android:fillColor="#454B55" />
+
+    <!-- Base Neumorphic Circle -->
+    <path
+        android:pathData="M 54 17 C 33.565 17 17 33.565 17 54 C 17 74.435 33.565 91 54 91 C 74.435 91 91 74.435 91 54 C 91 33.565 74.435 17 54 17 Z"
+        android:fillColor="#2E3239" />
+        
+    <!-- Continuous Sine Wave (Azure Blue Accent) -->
+    <path
+        android:pathData="M 30 54 C 36 30, 48 30, 54 54 C 60 78, 72 78, 78 54"
+        android:strokeColor="#007FFF"
+        android:strokeWidth="6"
+        android:strokeLineCap="round" />
+
+</vector>

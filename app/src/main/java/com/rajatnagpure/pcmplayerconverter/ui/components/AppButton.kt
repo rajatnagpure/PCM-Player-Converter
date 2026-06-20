@@ -22,7 +22,8 @@ fun AppButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    overrideColor: androidx.compose.ui.graphics.Color? = null
+    overrideColor: androidx.compose.ui.graphics.Color? = null,
+    iconColor: androidx.compose.ui.graphics.Color? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -46,7 +47,7 @@ fun AppButton(
             horizontalArrangement = Arrangement.Center
         ) {
             if (icon != null) {
-                Icon(icon, contentDescription = null, tint = contentColor, modifier = Modifier.size(18.dp))
+                Icon(icon, contentDescription = null, tint = iconColor ?: contentColor, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
             }
             Text(
