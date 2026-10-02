@@ -10,6 +10,12 @@
     <!-- Android 13+: needed to show "Conversion completed" notifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- No ads: strip the advertising-ID permissions that Firebase Analytics merges in, so the
+         Play Console "Advertising ID" declaration can truthfully be "No". -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_AD_ID" tools:node="remove" />
+
     <!-- Package visibility: hide the Color Shift promo when the game is already installed -->
     <queries>
         <package android:name="com.rajatnagpure.floodfill" />

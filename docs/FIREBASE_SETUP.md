@@ -464,7 +464,7 @@ Go to Play Console → your app → **Policy and programs → App content → Da
 Other questions:
 - **Is all data encrypted in transit?** Yes.
 - **Can users request deletion?** Answer according to your privacy policy. Analytics data is deleted automatically when retention expires.
-- **Advertising ID:** Play Console → **App content → Advertising ID** → *No*. The app sets `google_analytics_adid_collection_enabled=false`.
+- **Advertising ID:** Play Console → **App content → Advertising ID** → *No*. The app sets `google_analytics_adid_collection_enabled=false`, and the manifest strips the `AD_ID` / `ACCESS_ADSERVICES_*` permissions that Firebase Analytics would otherwise merge in. If you ever add ads, remove those `tools:node="remove"` lines and answer *Yes*.
 
 Also update your privacy policy to say the app uses Google Analytics for Firebase and Firebase Crashlytics.
 
