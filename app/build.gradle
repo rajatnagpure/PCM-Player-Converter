@@ -6,6 +6,15 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+// Firebase plugins need app/google-services.json (kept out of git, see docs/FIREBASE_SETUP.md).
+// Without it the app still builds and runs; analytics becomes a no-op.
+if (file('google-services.json').exists()) {
+    apply plugin: libs.plugins.google.services.get().pluginId
+    apply plugin: libs.plugins.firebase.crashlytics.get().pluginId
+} else {
+    logger.warn("app/google-services.json not found - building without Firebase config (analytics disabled).")
+}
+
 android {
     namespace 'com.rajatnagpure.pcmplayerconverter'
     compileSdk 36
@@ -21,9 +30,18 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Keep dev/test traffic out of production dashboards.
+            // To inspect events in DebugView: ./gradlew installDebug -PanalyticsInDebug=true
+            def debugAnalytics = (project.findProperty('analyticsInDebug') ?: 'false').toString()
+            manifestPlaceholders = [analyticsCollectionEnabled: debugAnalytics]
+            buildConfigField "boolean", "ANALYTICS_ENABLED", debugAnalytics
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            manifestPlaceholders = [analyticsCollectionEnabled: "true"]
+            buildConfigField "boolean", "ANALYTICS_ENABLED", "true"
         }
     }
     compileOptions {
@@ -32,6 +50,7 @@ android {
     }
     buildFeatures {
         compose true
+        buildConfig true
     }
     testOptions {
         unitTests.returnDefaultValues = true
@@ -72,6 +91,12 @@ dependencies {
     implementation libs.hilt.android
     ksp libs.hilt.compiler
     implementation libs.androidx.hilt.navigation.compose
+
+    // Firebase (free tier: Analytics, Crashlytics, Remote Config)
+    implementation platform(libs.firebase.bom)
+    implementation libs.firebase.analytics
+    implementation libs.firebase.crashlytics
+    implementation libs.firebase.config
 
     // Testing
     testImplementation libs.junit

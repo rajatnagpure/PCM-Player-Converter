@@ -18,6 +18,33 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.PCMPlayerConverter.Splash">
+
+        <!-- Firebase: collection is off in debug builds unless built with -PanalyticsInDebug=true.
+             The in-app "Share usage & crash data" toggle overrides this at runtime. -->
+        <meta-data
+            android:name="firebase_analytics_collection_enabled"
+            android:value="${analyticsCollectionEnabled}" />
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="${analyticsCollectionEnabled}" />
+        <!-- No ads in this app: never collect the advertising ID -->
+        <meta-data
+            android:name="google_analytics_adid_collection_enabled"
+            android:value="false" />
+        <!-- Consent Mode v2 defaults: analytics only, nothing ad-related -->
+        <meta-data
+            android:name="google_analytics_default_allow_analytics_storage"
+            android:value="true" />
+        <meta-data
+            android:name="google_analytics_default_allow_ad_storage"
+            android:value="false" />
+        <meta-data
+            android:name="google_analytics_default_allow_ad_user_data"
+            android:value="false" />
+        <meta-data
+            android:name="google_analytics_default_allow_ad_personalization_signals"
+            android:value="false" />
+
         <activity android:name="com.rajatnagpure.pcmplayerconverter.NeedHelp" />
         <activity android:name="com.rajatnagpure.pcmplayerconverter.MainActivity"
             android:exported="true"

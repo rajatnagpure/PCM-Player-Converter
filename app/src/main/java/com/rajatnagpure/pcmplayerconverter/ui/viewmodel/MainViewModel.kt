@@ -14,13 +14,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collect
 
+import android.content.Context
+import com.rajatnagpure.pcmplayerconverter.analytics.AnalyticsEvents
+import com.rajatnagpure.pcmplayerconverter.analytics.AnalyticsTracker
 import com.rajatnagpure.pcmplayerconverter.data.repository.ThemeRepository
 import com.rajatnagpure.pcmplayerconverter.ui.theme.NeuTheme
+import com.rajatnagpure.pcmplayerconverter.util.HapticsManager
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val pcmPlayer: PcmPlayer,
-    private val themeRepository: ThemeRepository
+    private val themeRepository: ThemeRepository,
+    private val analytics: AnalyticsTracker
 ) : ViewModel() {
 
     val currentTheme: StateFlow<NeuTheme> = themeRepository.currentTheme
@@ -40,7 +45,14 @@ class MainViewModel @Inject constructor(
     val progress: StateFlow<Float> = pcmPlayer.progressFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0f)
 
+    private val _analyticsEnabled = kotlinx.coroutines.flow.MutableStateFlow(analytics.isCollectionEnabled)
+    val analyticsEnabled: StateFlow<Boolean> = _analyticsEnabled.asStateFlow()
+
     init {
+        // Segment every report by these
+        analytics.setUserProperty(AnalyticsEvents.UP_THEME, themeRepository.currentTheme.value.name.lowercase())
+        analytics.setUserProperty(AnalyticsEvents.UP_HAPTICS, HapticsManager.isEnabled.toString())
+
         // Automatically show player when a file starts playing
         viewModelScope.launch {
             pcmPlayer.isPlayingFlow.collect { playing ->
@@ -84,5 +96,27 @@ class MainViewModel @Inject constructor(
 
     fun setTheme(theme: NeuTheme) {
         themeRepository.setTheme(theme)
+        analytics.setUserProperty(AnalyticsEvents.UP_THEME, theme.name.lowercase())
+        logSettingChanged("theme", theme.name.lowercase())
+    }
+
+    fun setHapticsEnabled(context: Context, enabled: Boolean) {
+        HapticsManager.setEnabled(context, enabled)
+        analytics.setUserProperty(AnalyticsEvents.UP_HAPTICS, enabled.toString())
+        logSettingChanged("haptics", enabled.toString())
+    }
+
+    fun setAnalyticsEnabled(enabled: Boolean) {
+        // Log the opt-out before collection stops so the opt-out rate is measurable
+        logSettingChanged("analytics", enabled.toString())
+        analytics.setCollectionEnabled(enabled)
+        _analyticsEnabled.value = enabled
+    }
+
+    private fun logSettingChanged(setting: String, value: String) {
+        analytics.logEvent(
+            AnalyticsEvents.SETTINGS_CHANGED,
+            mapOf(AnalyticsEvents.P_SETTING to setting, AnalyticsEvents.P_VALUE to value)
+        )
     }
 }

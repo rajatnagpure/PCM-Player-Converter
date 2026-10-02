@@ -246,7 +246,10 @@ fun AppNavigation(
                             com.rajatnagpure.pcmplayerconverter.ui.components.ThemeSelectionDialog(
                                 currentTheme = mainViewModel.currentTheme.collectAsState().value,
                                 onThemeSelected = { mainViewModel.setTheme(it) },
-                                onDismiss = { showThemeDialog = false }
+                                onDismiss = { showThemeDialog = false },
+                                onHapticsChanged = { mainViewModel.setHapticsEnabled(context, it) },
+                                analyticsEnabled = mainViewModel.analyticsEnabled.collectAsState().value,
+                                onAnalyticsChanged = { mainViewModel.setAnalyticsEnabled(it) }
                             )
                         }
                     },

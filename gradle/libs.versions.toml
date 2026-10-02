@@ -3,6 +3,9 @@ agp = "9.4.1"
 kotlin = "2.4.20"
 ksp = "2.3.12"
 hilt = "2.60.1"
+googleServices = "4.5.0"
+crashlyticsPlugin = "3.0.8"
+firebaseBom = "34.19.0"
 composeBom = "2026.06.01"
 coreKtx = "1.18.0"
 appcompat = "1.8.0"
@@ -42,6 +45,10 @@ compose-material-icons-extended = { module = "androidx.compose.material:material
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
 
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
+firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
+firebase-config = { module = "com.google.firebase:firebase-config" }
 
 junit = { module = "junit:junit", version.ref = "junit" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
@@ -58,3 +65,5 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "crashlyticsPlugin" }
