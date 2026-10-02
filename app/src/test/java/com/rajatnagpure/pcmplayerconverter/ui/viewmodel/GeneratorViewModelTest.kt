@@ -50,7 +50,7 @@ class GeneratorViewModelTest {
         coEvery { localData.getFileFromUri(any()) } returns fakeFile
 
         val savedStateHandle = androidx.lifecycle.SavedStateHandle(mapOf("uri" to "content://com.example/test.wav"))
-        val vm = GeneratorViewModel(recordUseCase, convertUseCase, localData, savedStateHandle, application, com.rajatnagpure.pcmplayerconverter.service.ConversionEvents())
+        val vm = GeneratorViewModel(recordUseCase, convertUseCase, localData, savedStateHandle, application, com.rajatnagpure.pcmplayerconverter.service.ConversionEvents(), com.rajatnagpure.pcmplayerconverter.analytics.FakeAnalyticsTracker())
 
         // allow coroutine to process
         kotlinx.coroutines.delay(200)
@@ -75,7 +75,7 @@ class GeneratorViewModelTest {
         coEvery { localData.getFileFromUri(any()) } returns fakeFile
 
         val savedStateHandle = androidx.lifecycle.SavedStateHandle(mapOf("uri" to "content://com.example/test.mp3"))
-        val vm = GeneratorViewModel(recordUseCase, convertUseCase, localData, savedStateHandle, application, com.rajatnagpure.pcmplayerconverter.service.ConversionEvents())
+        val vm = GeneratorViewModel(recordUseCase, convertUseCase, localData, savedStateHandle, application, com.rajatnagpure.pcmplayerconverter.service.ConversionEvents(), com.rajatnagpure.pcmplayerconverter.analytics.FakeAnalyticsTracker())
 
         // simulate file selected
         kotlinx.coroutines.delay(200)
@@ -99,7 +99,7 @@ class GeneratorViewModelTest {
         val vm = GeneratorViewModel(
             recordUseCase, mockk(relaxed = true), mockk(relaxed = true),
             androidx.lifecycle.SavedStateHandle(), mockk<Application>(relaxed = true),
-            events
+            events, com.rajatnagpure.pcmplayerconverter.analytics.FakeAnalyticsTracker()
         )
         testDispatcher.scheduler.advanceUntilIdle()
 

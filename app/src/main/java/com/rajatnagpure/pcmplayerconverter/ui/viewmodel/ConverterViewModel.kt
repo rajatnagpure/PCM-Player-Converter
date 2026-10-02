@@ -4,8 +4,11 @@ import com.rajatnagpure.pcmplayerconverter.ui.components.AppText as Text
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
+import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.rajatnagpure.pcmplayerconverter.analytics.AnalyticsEvents
+import com.rajatnagpure.pcmplayerconverter.analytics.AnalyticsTracker
 import com.rajatnagpure.pcmplayerconverter.data.local.LocalFileDataSource
 import com.rajatnagpure.pcmplayerconverter.domain.model.AudioConfig
 import com.rajatnagpure.pcmplayerconverter.domain.model.PcmEncoding
@@ -30,11 +33,16 @@ class ConverterViewModel @Inject constructor(
     private val localFileDataSource: LocalFileDataSource,
     savedStateHandle: androidx.lifecycle.SavedStateHandle,
     private val application: Application,
-    private val conversionEvents: ConversionEvents
+    private val conversionEvents: ConversionEvents,
+    private val analytics: AnalyticsTracker
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ConverterUiState())
     val uiState: StateFlow<ConverterUiState> = _uiState.asStateFlow()
+
+    // Analytics bookkeeping (no PII): avoid double-logging the same import, time playback
+    private var lastImportedUri: String? = null
+    private var playbackStartedAt = 0L
 
     init {
         // Results are delivered through the in-process ConversionEvents bus and held until shown,
@@ -54,7 +62,7 @@ class ConverterViewModel @Inject constructor(
                         val uri = Uri.parse(uriStr)
                         android.util.Log.d("ConverterViewModel", "Parsed URI: $uri")
                         
-                        onFileSelected(uri)
+                        onFileSelected(uri, AnalyticsEvents.SOURCE_EXTERNAL)
                     } catch (e: Exception) {
                         android.util.Log.e("ConverterViewModel", "Error parsing URI: $uriStr", e)
                         _uiState.value = _uiState.value.copy(errorMessage = "Error opening shared file")
@@ -81,7 +89,7 @@ class ConverterViewModel @Inject constructor(
         conversionEvents.acknowledge(result)
     }
 
-    fun onFileSelected(uri: Uri) {
+    fun onFileSelected(uri: Uri, source: String = AnalyticsEvents.SOURCE_PICKER) {
         android.util.Log.d("ConverterViewModel", "onFileSelected called with URI: $uri")
         viewModelScope.launch {
             var file: File? = null
@@ -106,11 +114,34 @@ class ConverterViewModel @Inject constructor(
             if (file != null) {
                 android.util.Log.d("ConverterViewModel", "File loaded successfully: ${file.name}")
                 _uiState.value = _uiState.value.copy(selectedFile = file, errorMessage = null)
+                if (lastImportedUri != uri.toString()) {
+                    lastImportedUri = uri.toString()
+                    analytics.logEvent(
+                        AnalyticsEvents.FILE_IMPORT,
+                        mapOf(
+                            AnalyticsEvents.P_SOURCE to source,
+                            AnalyticsEvents.P_TARGET to AnalyticsEvents.SCREEN_CONVERTER,
+                            AnalyticsEvents.P_FILE_EXT to AnalyticsEvents.extensionOf(file.name),
+                            AnalyticsEvents.P_SIZE_BUCKET to AnalyticsEvents.sizeBucket(file.length())
+                        )
+                    )
+                }
             } else {
                 android.util.Log.e("ConverterViewModel", "Failed to load file from URI")
                 _uiState.value = _uiState.value.copy(errorMessage = "Failed to load file")
+                analytics.logEvent(
+                    AnalyticsEvents.FILE_IMPORT_FAILED,
+                    mapOf(AnalyticsEvents.P_SOURCE to source, AnalyticsEvents.P_TARGET to AnalyticsEvents.SCREEN_CONVERTER)
+                )
             }
         }
+    }
+
+    fun onNotificationPermissionResult(granted: Boolean) {
+        analytics.logEvent(
+            AnalyticsEvents.PERMISSION_RESULT,
+            mapOf(AnalyticsEvents.P_PERMISSION to "post_notifications", AnalyticsEvents.P_GRANTED to granted)
+        )
     }
 
     fun updateConfig(config: AudioConfig) {
@@ -127,6 +158,10 @@ class ConverterViewModel @Inject constructor(
 
     fun cancelSave() {
         _uiState.value = _uiState.value.copy(showSaveDialog = false)
+        analytics.logEvent(
+            AnalyticsEvents.CONVERSION_CANCELLED,
+            mapOf(AnalyticsEvents.P_DIRECTION to AnalyticsEvents.DIRECTION_PCM_TO_AUDIO)
+        )
     }
 
     fun saveFileToUri(outUri: Uri) {
@@ -161,12 +196,25 @@ class ConverterViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(isPlaying = false)
             } else {
                 _uiState.value = _uiState.value.copy(isPlaying = true)
+                val playbackParams = mapOf(
+                    AnalyticsEvents.P_SCREEN to AnalyticsEvents.SCREEN_CONVERTER,
+                    AnalyticsEvents.P_SAMPLE_RATE to config.sampleRate,
+                    AnalyticsEvents.P_CHANNELS to config.channels,
+                    AnalyticsEvents.P_ENCODING to config.encoding.name.lowercase()
+                )
+                analytics.logEvent(AnalyticsEvents.PLAYBACK_START, playbackParams)
+                playbackStartedAt = SystemClock.elapsedRealtime()
                 try {
                     playAudioUseCase.play(file, config)
                 } catch (e: Exception) {
                     _uiState.value = _uiState.value.copy(errorMessage = "Playback error: ${e.message}")
+                    analytics.recordNonFatal(e, mapOf("feature" to "playback"))
                 } finally {
                     _uiState.value = _uiState.value.copy(isPlaying = false)
+                    analytics.logEvent(
+                        AnalyticsEvents.PLAYBACK_STOP,
+                        playbackParams + (AnalyticsEvents.P_DURATION_S to (SystemClock.elapsedRealtime() - playbackStartedAt) / 1000)
+                    )
                 }
             }
         }

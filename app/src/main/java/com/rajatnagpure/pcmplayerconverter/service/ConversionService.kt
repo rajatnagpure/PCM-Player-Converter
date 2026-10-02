@@ -6,9 +6,12 @@ import android.content.pm.ServiceInfo
 import android.net.Uri
 import android.os.Build
 import android.os.IBinder
+import android.os.SystemClock
 import android.provider.OpenableColumns
 import androidx.core.app.ServiceCompat
 import androidx.core.content.IntentCompat
+import com.rajatnagpure.pcmplayerconverter.analytics.AnalyticsEvents
+import com.rajatnagpure.pcmplayerconverter.analytics.AnalyticsTracker
 import com.rajatnagpure.pcmplayerconverter.domain.model.AudioConfig
 import com.rajatnagpure.pcmplayerconverter.domain.usecase.ConvertAudioToPcmUseCase
 import com.rajatnagpure.pcmplayerconverter.domain.usecase.ConvertPcmUseCase
@@ -33,6 +36,9 @@ class ConversionService : Service() {
     @Inject
     lateinit var conversionEvents: ConversionEvents
 
+    @Inject
+    lateinit var analytics: AnalyticsTracker
+
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -56,8 +62,13 @@ class ConversionService : Service() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC else 0
             )
 
+            val eventParams = conversionParams(task, inFile, config)
+            analytics.logEvent(AnalyticsEvents.CONVERSION_START, eventParams)
+            val startedAt = SystemClock.elapsedRealtime()
+
             serviceScope.launch {
                 var tempFile: File? = null
+                var stage = "convert"
                 try {
                     // unexpected but possible: use provided outFile or create a temp one
                     val workingFile = if (outFile != null) {
@@ -80,8 +91,10 @@ class ConversionService : Service() {
                         }
                     }
                     result.getOrThrow()
+                    val outputBytes = workingFile.length()
 
                     // If we used a temp file and have a target URI, copy the result there
+                    stage = "copy_out"
                     val outUri = outUriString?.let { Uri.parse(it) }
                     if (outUri != null && tempFile != null && workingFile.exists()) {
                         val stream = contentResolver.openOutputStream(outUri)
@@ -94,6 +107,15 @@ class ConversionService : Service() {
                     }
 
                     val outputName = outUri?.let { displayNameOf(it) } ?: outFile?.name
+                    analytics.logEvent(
+                        AnalyticsEvents.CONVERSION_COMPLETE,
+                        eventParams + mapOf(
+                            AnalyticsEvents.P_DURATION_MS to SystemClock.elapsedRealtime() - startedAt,
+                            AnalyticsEvents.P_OUTPUT_SIZE_BUCKET to AnalyticsEvents.sizeBucket(outputBytes)
+                        )
+                    )
+                    analytics.setUserProperty(AnalyticsEvents.UP_HAS_CONVERTED, "true")
+
                     conversionEvents.publish(ConversionResult(jobId, origin, success = true, outputName = outputName))
                     ConversionNotifications.post(
                         this@ConversionService,
@@ -101,6 +123,16 @@ class ConversionService : Service() {
                         ConversionNotifications.completed(this@ConversionService, outputName, outUri)
                     )
                 } catch (e: Exception) {
+                    analytics.logEvent(
+                        AnalyticsEvents.CONVERSION_FAILED,
+                        eventParams + mapOf(
+                            AnalyticsEvents.P_ERROR_TYPE to AnalyticsEvents.errorType(e),
+                            AnalyticsEvents.P_STAGE to stage,
+                            AnalyticsEvents.P_DURATION_MS to SystemClock.elapsedRealtime() - startedAt
+                        )
+                    )
+                    analytics.recordNonFatal(e, mapOf("task" to task, "stage" to stage))
+
                     conversionEvents.publish(ConversionResult(jobId, origin, success = false, errorMessage = e.message))
                     ConversionNotifications.post(
                         this@ConversionService,
@@ -119,6 +151,24 @@ class ConversionService : Service() {
             stopSelf(startId)
         }
         return START_NOT_STICKY
+    }
+
+    private fun conversionParams(task: String, inFile: File, config: AudioConfig?): Map<String, Any?> {
+        val base = mapOf(
+            AnalyticsEvents.P_FILE_EXT to AnalyticsEvents.extensionOf(inFile.name),
+            AnalyticsEvents.P_SIZE_BUCKET to AnalyticsEvents.sizeBucket(inFile.length())
+        )
+        return if (task == TASK_AUDIO_TO_PCM) {
+            base + (AnalyticsEvents.P_DIRECTION to AnalyticsEvents.DIRECTION_AUDIO_TO_PCM)
+        } else {
+            base + mapOf(
+                AnalyticsEvents.P_DIRECTION to AnalyticsEvents.DIRECTION_PCM_TO_AUDIO,
+                AnalyticsEvents.P_OUTPUT_FORMAT to config?.outputFormat?.extension,
+                AnalyticsEvents.P_SAMPLE_RATE to config?.sampleRate,
+                AnalyticsEvents.P_CHANNELS to config?.channels,
+                AnalyticsEvents.P_ENCODING to config?.encoding?.name?.lowercase()
+            )
+        }
     }
 
     private fun displayNameOf(uri: Uri): String? = runCatching {

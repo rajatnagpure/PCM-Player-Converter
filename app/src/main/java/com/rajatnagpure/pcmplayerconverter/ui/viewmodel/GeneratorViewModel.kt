@@ -3,8 +3,11 @@ import com.rajatnagpure.pcmplayerconverter.ui.components.AppText as Text
 
 import android.net.Uri
 import android.os.Environment
+import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.rajatnagpure.pcmplayerconverter.analytics.AnalyticsEvents
+import com.rajatnagpure.pcmplayerconverter.analytics.AnalyticsTracker
 import com.rajatnagpure.pcmplayerconverter.data.local.LocalFileDataSource
 import com.rajatnagpure.pcmplayerconverter.domain.model.AudioConfig
 import com.rajatnagpure.pcmplayerconverter.domain.usecase.ConvertAudioToPcmUseCase
@@ -28,12 +31,17 @@ class GeneratorViewModel @Inject constructor(
     private val localFileDataSource: LocalFileDataSource,
     savedStateHandle: androidx.lifecycle.SavedStateHandle,
     private val application: android.app.Application,
-    private val conversionEvents: ConversionEvents
+    private val conversionEvents: ConversionEvents,
+    private val analytics: AnalyticsTracker
 ) : ViewModel() {
 
     // Move UI state declaration before init blocks to ensure it's initialized when collectors run
     private val _uiState = MutableStateFlow(GeneratorUiState())
     val uiState: StateFlow<GeneratorUiState> = _uiState.asStateFlow()
+
+    // Analytics bookkeeping (no PII)
+    private var lastImportedUri: String? = null
+    private var recordingStartedAt = 0L
 
     init {
         // Only results of jobs started from this screen
@@ -51,7 +59,7 @@ class GeneratorViewModel @Inject constructor(
                         val uri = android.net.Uri.parse(uriStr)
                         android.util.Log.d("GeneratorViewModel", "Parsed URI: $uri")
                         
-                        onFileSelectedForConversion(uri)
+                        onFileSelectedForConversion(uri, AnalyticsEvents.SOURCE_EXTERNAL)
                     } catch (e: Exception) {
                         android.util.Log.e("GeneratorViewModel", "Error parsing URI: $uriStr", e)
                         _uiState.value = _uiState.value.copy(errorMessage = "Error opening shared file")
@@ -81,6 +89,21 @@ class GeneratorViewModel @Inject constructor(
         conversionEvents.acknowledge(result)
     }
 
+    fun onRecordPermissionResult(granted: Boolean) {
+        analytics.logEvent(
+            AnalyticsEvents.PERMISSION_RESULT,
+            mapOf(AnalyticsEvents.P_PERMISSION to "record_audio", AnalyticsEvents.P_GRANTED to granted)
+        )
+        if (granted) toggleRecording()
+    }
+
+    fun onNotificationPermissionResult(granted: Boolean) {
+        analytics.logEvent(
+            AnalyticsEvents.PERMISSION_RESULT,
+            mapOf(AnalyticsEvents.P_PERMISSION to "post_notifications", AnalyticsEvents.P_GRANTED to granted)
+        )
+    }
+
     fun updateConfig(config: AudioConfig) {
         _uiState.value = _uiState.value.copy(audioConfig = config)
     }
@@ -90,6 +113,10 @@ class GeneratorViewModel @Inject constructor(
         viewModelScope.launch {
             if (_uiState.value.isRecording) {
                 recordAudioUseCase.stop()
+                analytics.logEvent(
+                    AnalyticsEvents.RECORDING_STOP,
+                    recordingParams(config) + (AnalyticsEvents.P_DURATION_S to (SystemClock.elapsedRealtime() - recordingStartedAt) / 1000)
+                )
                 val tempFile = _uiState.value.lastRecordedFile
                 _uiState.value = _uiState.value.copy(
                     isRecording = false, 
@@ -102,25 +129,54 @@ class GeneratorViewModel @Inject constructor(
                 val cacheDir = application.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: application.cacheDir
                 val file = File(cacheDir, "temp_recording.pcm")
                 _uiState.value = _uiState.value.copy(isRecording = true, statusMessage = "Recording...", lastRecordedFile = file, errorMessage = null)
+                recordingStartedAt = SystemClock.elapsedRealtime()
+                analytics.logEvent(AnalyticsEvents.RECORDING_START, recordingParams(config))
                 try {
                     recordAudioUseCase.start(file, config)
                 } catch (e: Exception) {
                     _uiState.value = _uiState.value.copy(isRecording = false, errorMessage = "Recording error: ${e.message}")
+                    analytics.logEvent(
+                        AnalyticsEvents.RECORDING_FAILED,
+                        recordingParams(config) + (AnalyticsEvents.P_ERROR_TYPE to AnalyticsEvents.errorType(e))
+                    )
+                    analytics.recordNonFatal(e, mapOf("feature" to "recording"))
                 }
             }
         }
     }
 
-    fun onFileSelectedForConversion(uri: Uri) {
+    private fun recordingParams(config: AudioConfig): Map<String, Any?> = mapOf(
+        AnalyticsEvents.P_SAMPLE_RATE to config.sampleRate,
+        AnalyticsEvents.P_CHANNELS to config.channels,
+        AnalyticsEvents.P_ENCODING to config.encoding.name.lowercase()
+    )
+
+    fun onFileSelectedForConversion(uri: Uri, source: String = AnalyticsEvents.SOURCE_PICKER) {
         android.util.Log.d("GeneratorViewModel", "onFileSelectedForConversion called with URI: $uri")
         viewModelScope.launch {
             val file = localFileDataSource.getFileFromUri(uri)
             if (file != null) {
                 android.util.Log.d("GeneratorViewModel", "File loaded successfully: ${file.name}")
                 _uiState.value = _uiState.value.copy(selectedFileToConvert = file, errorMessage = null)
+                if (lastImportedUri != uri.toString()) {
+                    lastImportedUri = uri.toString()
+                    analytics.logEvent(
+                        AnalyticsEvents.FILE_IMPORT,
+                        mapOf(
+                            AnalyticsEvents.P_SOURCE to source,
+                            AnalyticsEvents.P_TARGET to AnalyticsEvents.SCREEN_GENERATOR,
+                            AnalyticsEvents.P_FILE_EXT to AnalyticsEvents.extensionOf(file.name),
+                            AnalyticsEvents.P_SIZE_BUCKET to AnalyticsEvents.sizeBucket(file.length())
+                        )
+                    )
+                }
             } else {
                 android.util.Log.e("GeneratorViewModel", "Failed to load file from URI")
                 _uiState.value = _uiState.value.copy(errorMessage = "Failed to load file")
+                analytics.logEvent(
+                    AnalyticsEvents.FILE_IMPORT_FAILED,
+                    mapOf(AnalyticsEvents.P_SOURCE to source, AnalyticsEvents.P_TARGET to AnalyticsEvents.SCREEN_GENERATOR)
+                )
             }
         }
     }
@@ -143,6 +199,10 @@ class GeneratorViewModel @Inject constructor(
                             input.copyTo(output)
                         }
                     }
+                    analytics.logEvent(
+                        AnalyticsEvents.RECORDING_SAVED,
+                        mapOf(AnalyticsEvents.P_SIZE_BUCKET to AnalyticsEvents.sizeBucket(tempFile.length()))
+                    )
                     tempFile.delete()
                     _uiState.value = _uiState.value.copy(
                         isConverting = false, 
@@ -152,6 +212,7 @@ class GeneratorViewModel @Inject constructor(
                     )
                 } catch (e: Exception) {
                     _uiState.value = _uiState.value.copy(isConverting = false, errorMessage = "Save failed: ${e.message}")
+                    analytics.recordNonFatal(e, mapOf("feature" to "save_recording"))
                 }
             }
         } else {
@@ -177,6 +238,12 @@ class GeneratorViewModel @Inject constructor(
     }
 
     fun cancelSave() {
+        analytics.logEvent(
+            AnalyticsEvents.CONVERSION_CANCELLED,
+            mapOf(
+                AnalyticsEvents.P_DIRECTION to if (_uiState.value.tempRecordedFile != null) AnalyticsEvents.SOURCE_RECORDING else AnalyticsEvents.DIRECTION_AUDIO_TO_PCM
+            )
+        )
         _uiState.value.tempRecordedFile?.delete()
         _uiState.value = _uiState.value.copy(showSaveDialog = false, tempRecordedFile = null)
     }

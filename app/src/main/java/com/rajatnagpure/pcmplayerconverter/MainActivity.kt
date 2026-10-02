@@ -20,7 +20,10 @@ import androidx.navigation.compose.rememberNavController
 import com.rajatnagpure.pcmplayerconverter.ui.navigation.AppNavigation
 import com.rajatnagpure.pcmplayerconverter.ui.viewmodel.MainViewModel
 import com.rajatnagpure.pcmplayerconverter.ui.theme.PCMPlayerConverterTheme
+import com.rajatnagpure.pcmplayerconverter.analytics.AnalyticsEvents
+import com.rajatnagpure.pcmplayerconverter.analytics.AnalyticsTracker
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -33,6 +36,9 @@ class MainActivity : ComponentActivity() {
     private val _intentRouteEvent = androidx.compose.runtime.mutableStateOf<IntentRouteEvent?>(null)
     
     private val viewModel: MainViewModel by viewModels()
+
+    @Inject
+    lateinit var analytics: AnalyticsTracker
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.Theme_PCMPlayerConverter)
@@ -83,7 +89,7 @@ class MainActivity : ComponentActivity() {
                         if (clipData.itemCount > 0) {
                             clipData.getItemAt(0).uri
                         } else null
-                    } ?: intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+                    } ?: androidx.core.content.IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
                 }
                 Intent.ACTION_VIEW -> intent.data
                 else -> null
@@ -119,6 +125,14 @@ class MainActivity : ComponentActivity() {
                     else -> "generator?uri=$encodedUri" // default to generator for unknown files
                 }
 
+                analytics.logEvent(
+                    AnalyticsEvents.EXTERNAL_FILE_OPEN,
+                    mapOf(
+                        AnalyticsEvents.P_ACTION to if (action == Intent.ACTION_SEND) "send" else "view",
+                        AnalyticsEvents.P_MIME_GROUP to (mimeType?.substringBefore('/') ?: "unknown"),
+                        AnalyticsEvents.P_TARGET to route.substringBefore('?')
+                    )
+                )
                 android.util.Log.d(TAG, "Generated intent route: $route")
                 _intentRouteEvent.value = IntentRouteEvent(route)
             } ?: run {

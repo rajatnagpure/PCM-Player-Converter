@@ -31,6 +31,9 @@ import com.rajatnagpure.pcmplayerconverter.ui.components.AudioPlayerSheet
 import com.rajatnagpure.pcmplayerconverter.ui.screens.ConverterScreen
 import com.rajatnagpure.pcmplayerconverter.ui.screens.GeneratorScreen
 import com.rajatnagpure.pcmplayerconverter.ui.viewmodel.MainViewModel
+import com.rajatnagpure.pcmplayerconverter.analytics.AnalyticsEvents
+import com.rajatnagpure.pcmplayerconverter.config.AppConfig
+import com.rajatnagpure.pcmplayerconverter.util.PlayStore
 
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import kotlinx.coroutines.flow.first
@@ -49,6 +52,19 @@ fun AppNavigation(
     mainViewModel: MainViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
+
+    // Manual screen_view tracking for Compose destinations
+    DisposableEffect(navController) {
+        val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
+            when (destination.route?.substringBefore("?")) {
+                "converter" -> mainViewModel.trackScreen(AnalyticsEvents.SCREEN_CONVERTER)
+                "generator" -> mainViewModel.trackScreen(AnalyticsEvents.SCREEN_GENERATOR)
+                "help" -> mainViewModel.trackScreen(AnalyticsEvents.SCREEN_HELP)
+            }
+        }
+        navController.addOnDestinationChangedListener(listener)
+        onDispose { navController.removeOnDestinationChangedListener(listener) }
+    }
     
     // Handle intent routing reactively
     LaunchedEffect(intentRouteEvent) {
@@ -104,6 +120,10 @@ fun AppNavigation(
     val isPaused by mainViewModel.isPaused.collectAsState()
     val currentFile by mainViewModel.currentFile.collectAsState()
     val progress by mainViewModel.progress.collectAsState()
+
+    LaunchedEffect(isPlayerVisible) {
+        if (isPlayerVisible) mainViewModel.trackOverlay(AnalyticsEvents.SCREEN_PLAYER)
+    }
     
     // Get current route to determine if we should show the full-screen Help page
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -171,24 +191,35 @@ fun AppNavigation(
                     Spacer(Modifier.height(32.dp))
                     
                     val drawerItems = listOf(
-                        Triple("More Apps", Icons.Default.Apps, Intent(Intent.ACTION_VIEW, Uri.parse(com.rajatnagpure.pcmplayerconverter.config.AppConfig.DEVELOPER_PLAYSTORE_SEARCH_URL))),
-                        Triple("Share App", Icons.Default.Share, Intent().apply {
-                            action = Intent.ACTION_SEND
-                            putExtra(Intent.EXTRA_TEXT, com.rajatnagpure.pcmplayerconverter.config.AppConfig.APP_SHARE_TEXT_PREFIX)
-                            type = "text/plain"
-                        }.let { Intent.createChooser(it, null) }),
-                        Triple("Request Feature", Icons.Default.BugReport, Intent(Intent.ACTION_VIEW, Uri.parse(com.rajatnagpure.pcmplayerconverter.config.AppConfig.FEATURE_REQUEST_FORM_URL))),
-                        Triple("Rate on Playstore", Icons.Default.Star, Intent(Intent.ACTION_VIEW, Uri.parse(com.rajatnagpure.pcmplayerconverter.config.AppConfig.APP_PLAYSTORE_DETAILS_URL))),
-                        Triple("Contribute", Icons.Default.Code, Intent(Intent.ACTION_VIEW, Uri.parse(com.rajatnagpure.pcmplayerconverter.config.AppConfig.GITHUB_REPO_URL)))
+                        DrawerItem("More Apps", "more_apps", Icons.Default.Apps) {
+                            PlayStore.safeStart(context, Intent(Intent.ACTION_VIEW, Uri.parse(AppConfig.DEVELOPER_PLAYSTORE_SEARCH_URL)))
+                        },
+                        DrawerItem("Share App", "share_app", Icons.Default.Share) {
+                            PlayStore.safeStart(context, Intent().apply {
+                                action = Intent.ACTION_SEND
+                                putExtra(Intent.EXTRA_TEXT, AppConfig.APP_SHARE_TEXT_PREFIX)
+                                type = "text/plain"
+                            }.let { Intent.createChooser(it, null) })
+                        },
+                        DrawerItem("Request Feature", "feature_request", Icons.Default.BugReport) {
+                            PlayStore.safeStart(context, Intent(Intent.ACTION_VIEW, Uri.parse(AppConfig.FEATURE_REQUEST_FORM_URL)))
+                        },
+                        DrawerItem("Rate on Playstore", "rate", Icons.Default.Star) {
+                            PlayStore.openListing(context, AppConfig.APP_PACKAGE)
+                        },
+                        DrawerItem("Contribute", "contribute", Icons.Default.Code) {
+                            PlayStore.safeStart(context, Intent(Intent.ACTION_VIEW, Uri.parse(AppConfig.GITHUB_REPO_URL)))
+                        }
                     )
 
-                    drawerItems.forEach { (label, icon, intent) ->
+                    drawerItems.forEach { item ->
                         com.rajatnagpure.pcmplayerconverter.ui.components.AppButton(
-                            text = label,
-                            icon = icon,
+                            text = item.label,
+                            icon = item.icon,
                             onClick = {
                                 coroutineScope.launch { drawerState.close() }
-                                context.startActivity(intent)
+                                mainViewModel.logDrawerAction(item.analyticsId)
+                                item.onClick()
                             },
                             iconColor = drawerSecondaryColor,
                             modifier = Modifier
@@ -243,6 +274,7 @@ fun AppNavigation(
                         }
                         
                         if (showThemeDialog) {
+                            LaunchedEffect(Unit) { mainViewModel.trackOverlay(AnalyticsEvents.SCREEN_SETTINGS) }
                             com.rajatnagpure.pcmplayerconverter.ui.components.ThemeSelectionDialog(
                                 currentTheme = mainViewModel.currentTheme.collectAsState().value,
                                 onThemeSelected = { mainViewModel.setTheme(it) },
@@ -350,3 +382,10 @@ fun AppNavigation(
         }
     }
 }
+
+private data class DrawerItem(
+    val label: String,
+    val analyticsId: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val onClick: () -> Unit
+)

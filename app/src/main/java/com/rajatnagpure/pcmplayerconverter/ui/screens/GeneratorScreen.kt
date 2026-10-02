@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.Canvas
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
+import com.rajatnagpure.pcmplayerconverter.analytics.AnalyticsEvents
 import com.rajatnagpure.pcmplayerconverter.ui.components.AppButton
 import com.rajatnagpure.pcmplayerconverter.util.rememberNotificationPermissionGate
 import com.rajatnagpure.pcmplayerconverter.ui.components.NeuCard
@@ -64,7 +65,7 @@ fun GeneratorScreen(
                 try {
                     val parsed = android.net.Uri.parse(uriArg)
                     android.util.Log.d("GeneratorScreen", "SavedStateHandle uri: $uriArg -> $parsed")
-                    viewModel.onFileSelectedForConversion(parsed)
+                    viewModel.onFileSelectedForConversion(parsed, AnalyticsEvents.SOURCE_EXTERNAL)
                 } catch (e: Exception) {
                     android.util.Log.e("GeneratorScreen", "Error parsing savedStateHandle uri", e)
                 }
@@ -90,13 +91,12 @@ fun GeneratorScreen(
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
-        if (isGranted) {
-            viewModel.toggleRecording()
-        }
+        viewModel.onRecordPermissionResult(isGranted)
     }
 
     // Ask (once) for notification permission so we can post "Conversion completed"
     val convertWithPermission = rememberNotificationPermissionGate(
+        onResult = { viewModel.onNotificationPermissionResult(it) },
         action = { viewModel.requestPcmSaveFileName() }
     )
 

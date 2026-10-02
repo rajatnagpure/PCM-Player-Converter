@@ -3,6 +3,8 @@ package com.rajatnagpure.pcmplayerconverter.ui.viewmodel
 import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
+import com.rajatnagpure.pcmplayerconverter.analytics.AnalyticsEvents
+import com.rajatnagpure.pcmplayerconverter.analytics.FakeAnalyticsTracker
 import com.rajatnagpure.pcmplayerconverter.data.local.LocalFileDataSource
 import com.rajatnagpure.pcmplayerconverter.service.ConversionEvents
 import com.rajatnagpure.pcmplayerconverter.service.ConversionOrigin
@@ -41,6 +43,7 @@ class ConverterViewModelTest {
     private lateinit var savedStateHandle: SavedStateHandle
     private lateinit var viewModel: ConverterViewModel
     private lateinit var conversionEvents: ConversionEvents
+    private lateinit var analytics: FakeAnalyticsTracker
 
     @Before
     fun setup() {
@@ -53,6 +56,7 @@ class ConverterViewModelTest {
         application = mockk(relaxed = true)
         savedStateHandle = SavedStateHandle()
         conversionEvents = ConversionEvents()
+        analytics = FakeAnalyticsTracker()
     }
 
     @After
@@ -62,7 +66,7 @@ class ConverterViewModelTest {
 
     @Test
     fun `onFileSelected updates uiState with selected file`() = runTest {
-        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application, conversionEvents)
+        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application, conversionEvents, analytics)
         
         val mockUri = mockk<Uri>(relaxed = true)
         val fakeFile = File("test.pcm")
@@ -79,7 +83,7 @@ class ConverterViewModelTest {
 
     @Test
     fun `saveFileToUri triggers conversion service and sets isConverting`() = runTest {
-        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application, conversionEvents)
+        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application, conversionEvents, analytics)
         
         // Setup initial state with a file
         val mockUri = mockk<Uri>(relaxed = true)
@@ -107,7 +111,7 @@ class ConverterViewModelTest {
         val fakeFile = File("test.pcm")
         coEvery { localFileDataSource.copyUriToCache(any()) } returns fakeFile
         
-        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application, conversionEvents)
+        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application, conversionEvents, analytics)
         
         testDispatcher.scheduler.advanceUntilIdle()
         
@@ -116,7 +120,7 @@ class ConverterViewModelTest {
 
     @Test
     fun `successful conversion shows conversion completed`() = runTest {
-        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application, conversionEvents)
+        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application, conversionEvents, analytics)
         testDispatcher.scheduler.advanceUntilIdle()
 
         val result = ConversionResult(42L, ConversionOrigin.CONVERTER, success = true, outputName = "song.wav")
@@ -132,7 +136,7 @@ class ConverterViewModelTest {
 
     @Test
     fun `generator results are ignored by the converter`() = runTest {
-        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application, conversionEvents)
+        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application, conversionEvents, analytics)
         testDispatcher.scheduler.advanceUntilIdle()
 
         conversionEvents.publish(ConversionResult(1L, ConversionOrigin.GENERATOR, success = true, outputName = "x.pcm"))
@@ -143,11 +147,36 @@ class ConverterViewModelTest {
 
     @Test
     fun `failed conversion shows failure reason`() = runTest {
-        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application, conversionEvents)
+        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application, conversionEvents, analytics)
         conversionEvents.publish(ConversionResult(7L, ConversionOrigin.CONVERTER, success = false, errorMessage = "Disk full"))
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals("Conversion failed: Disk full", viewModel.uiState.value.conversionMessage)
         assertEquals(false, viewModel.uiState.value.conversionSucceeded)
+    }
+
+    @Test
+    fun `file import is logged once without the file name`() = runTest {
+        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application, conversionEvents, analytics)
+        val uri = mockk<Uri>(relaxed = true)
+        every { uri.scheme } returns "file"
+        every { uri.toString() } returns "file:///sdcard/private name.pcm"
+        coEvery { localFileDataSource.getFileFromUri(uri) } returns File("private name.pcm")
+
+        viewModel.onFileSelected(uri)
+        viewModel.onFileSelected(uri) // e.g. screen + ViewModel both reacting to the same nav arg
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val imports = analytics.named(AnalyticsEvents.FILE_IMPORT)
+        assertEquals(1, imports.size)
+        assertEquals("pcm", imports.single().params[AnalyticsEvents.P_FILE_EXT])
+        assertTrue(imports.single().params.values.none { it.toString().contains("private") })
+    }
+
+    @Test
+    fun `cancelling the save picker is logged`() = runTest {
+        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application, conversionEvents, analytics)
+        viewModel.cancelSave()
+        assertEquals(1, analytics.named(AnalyticsEvents.CONVERSION_CANCELLED).size)
     }
 }

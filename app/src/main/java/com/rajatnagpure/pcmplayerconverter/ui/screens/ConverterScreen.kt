@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
+import com.rajatnagpure.pcmplayerconverter.analytics.AnalyticsEvents
 import com.rajatnagpure.pcmplayerconverter.ui.components.AppButton
 import com.rajatnagpure.pcmplayerconverter.util.rememberNotificationPermissionGate
 import com.rajatnagpure.pcmplayerconverter.ui.components.NeuCard
@@ -57,7 +58,7 @@ fun ConverterScreen(
                 try {
                     val parsed = Uri.parse(uriArg)
                     android.util.Log.d("ConverterScreen", "SavedStateHandle uri: $uriArg -> $parsed")
-                    viewModel.onFileSelected(parsed)
+                    viewModel.onFileSelected(parsed, AnalyticsEvents.SOURCE_EXTERNAL)
                 } catch (e: Exception) {
                     android.util.Log.e("ConverterScreen", "Error parsing savedStateHandle uri", e)
                 }
@@ -84,6 +85,7 @@ fun ConverterScreen(
 
     // Ask (once) for notification permission so we can post "Conversion completed"
     val convertWithPermission = rememberNotificationPermissionGate(
+        onResult = { viewModel.onNotificationPermissionResult(it) },
         action = { viewModel.requestSaveFileName() }
     )
 

@@ -48,6 +48,8 @@ class MainViewModel @Inject constructor(
     private val _analyticsEnabled = kotlinx.coroutines.flow.MutableStateFlow(analytics.isCollectionEnabled)
     val analyticsEnabled: StateFlow<Boolean> = _analyticsEnabled.asStateFlow()
 
+    private var lastScreen: String? = null
+
     init {
         // Segment every report by these
         analytics.setUserProperty(AnalyticsEvents.UP_THEME, themeRepository.currentTheme.value.name.lowercase())
@@ -111,6 +113,28 @@ class MainViewModel @Inject constructor(
         logSettingChanged("analytics", enabled.toString())
         analytics.setCollectionEnabled(enabled)
         _analyticsEnabled.value = enabled
+    }
+
+    /** Manual screen tracking: Compose navigation is invisible to Firebase's automatic Activity tracking. */
+    fun trackScreen(screenName: String) {
+        if (screenName == lastScreen) return
+        lastScreen = screenName
+        analytics.logScreen(screenName)
+    }
+
+    /** For overlays (dialogs) that should count as a screen view every time they open. */
+    fun trackOverlay(screenName: String) {
+        analytics.logScreen(screenName)
+    }
+
+    fun logDrawerAction(item: String) {
+        analytics.logEvent(AnalyticsEvents.DRAWER_ACTION, mapOf(AnalyticsEvents.P_ITEM to item))
+        if (item == "share_app") {
+            analytics.logEvent(
+                AnalyticsEvents.SHARE,
+                mapOf(AnalyticsEvents.P_METHOD to "system_chooser", AnalyticsEvents.P_CONTENT_TYPE to "app")
+            )
+        }
     }
 
     private fun logSettingChanged(setting: String, value: String) {
