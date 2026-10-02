@@ -64,6 +64,11 @@ Analytics, Crashlytics and Remote Config read their configuration from `app/goog
 
 Full setup instructions, including Remote Config, key events, custom dimensions and the Play Data safety form, are in **[docs/FIREBASE_SETUP.md](docs/FIREBASE_SETUP.md)**.
 
+Most of the console setup can be done from the terminal:
+- `python3 scripts/firebase/ga4.py setup`: creates the key events and custom dimensions/metrics, and sets data retention, from `firebase/ga4_definitions.json`.
+- `python3 scripts/firebase/ga4.py report`: prints the standard reports.
+- `firebase deploy --only remoteconfig`: publishes the Remote Config parameters.
+
 ## Tests
 
 Run the unit tests (JVM and Robolectric):

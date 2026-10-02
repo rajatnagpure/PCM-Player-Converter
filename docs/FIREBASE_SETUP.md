@@ -25,6 +25,119 @@ Progress so far:
 - [ ] 10. Build the reports
 - [ ] 11. Fill in the Play Data safety form
 
+Every step from 4 to 10 can also be done **from the terminal**. See [Terminal path](#terminal-path-steps-410-without-clicking-around) just below; each section also has an "Option: terminal" block.
+
+---
+
+## Terminal path (steps 4–10 without clicking around)
+
+The terminal path uses these files:
+
+- [`scripts/firebase/ga4.py`](../scripts/firebase/ga4.py): a small Python 3 script (no extra packages) that calls Google's official Analytics Admin API and Data API.
+- [`firebase/ga4_definitions.json`](../firebase/ga4_definitions.json): lists every key event, custom dimension, custom metric and the retention setting. The script makes the GA4 property match this file.
+- [`firebase/remoteconfig.template.json`](../firebase/remoteconfig.template.json): the Remote Config parameters, deployed with the Firebase CLI.
+
+The script is **safe to re-run**. Anything that already exists is skipped, and `--dry-run` shows what it would change without changing anything.
+
+### 0. One-time preparation (about 10 minutes)
+
+**a) Install the Google Cloud CLI (`gcloud`) and log in.** Your Firebase project is also a Google Cloud project, so `gcloud` can manage it.
+
+```bash
+brew install --cask google-cloud-sdk
+```
+
+Open a **new** terminal window so `gcloud` is on your PATH, then log in in the browser window that opens. Use the same Google account as the Firebase console:
+
+```bash
+gcloud auth login
+```
+
+```bash
+gcloud config set project pcm-player-and-converter
+```
+
+**b) Install the Firebase CLI and log in.** It's already installed on this Mac; check with `firebase --version`.
+
+```bash
+npm install -g firebase-tools
+```
+
+```bash
+firebase login
+```
+
+**c) Create the helper service account.**
+
+*Why this is needed:* Google doesn't give the plain `gcloud` login permission to change Google Analytics settings. Instead, the script uses a **service account**, a robot Google account that belongs to your project. Your own login gets permission to borrow its access for one hour at a time, so there are **no password or key files** to store.
+
+Run from the repo root:
+
+```bash
+python3 scripts/firebase/ga4.py bootstrap
+```
+
+The command:
+- enables the needed Google APIs on the project (Analytics Admin, Analytics Data, IAM Credentials, Firebase Management, API Keys)
+- creates `ga4-admin@pcm-player-and-converter.iam.gserviceaccount.com`
+- lets your account borrow its access
+
+**d) Give the service account access to Google Analytics.** This is the **only click step**. Google has no API for granting the very first access.
+
+1. Open <https://analytics.google.com>. Check the property picker at the top left: it should show the property for this app.
+2. Click **Admin** (⚙ gear icon, bottom left).
+3. In the **Property settings** column, open **Property → Property access management**.
+4. Click the blue **+** button (top right) → **Add users**.
+5. For **Email address**, enter `ga4-admin@pcm-player-and-converter.iam.gserviceaccount.com`.
+6. Under **Direct roles and data restrictions**, choose **Editor**. Untick **Notify new users by email**, since a robot account can't read email.
+7. Click **Add**.
+
+### 1. Run it
+
+```bash
+python3 scripts/firebase/ga4.py setup --dry-run
+```
+
+```bash
+python3 scripts/firebase/ga4.py setup
+```
+
+```bash
+python3 scripts/firebase/ga4.py status
+```
+
+- `setup --dry-run` previews the changes.
+- `setup` creates the 3 key events, 21 custom dimensions and 3 custom metrics, and sets retention to 14 months. This covers steps 6, 7 and 8.
+- `status` shows what's now configured.
+
+Then deploy the Remote Config parameters (step 5):
+
+```bash
+firebase deploy --only remoteconfig
+```
+
+Restrict the API key (step 4). Use the SHA-1(s) from `./gradlew signingReport` and from the Play Console:
+
+```bash
+python3 scripts/firebase/ga4.py restrict-key --sha1 AA:BB:CC:... --sha1 11:22:33:...
+```
+
+Read the reports in your terminal (step 10), once data has arrived:
+
+```bash
+python3 scripts/firebase/ga4.py report --days 28
+```
+
+**Troubleshooting**
+
+| Message | Fix |
+|---|---|
+| `gcloud is not installed` | Do step 0a, then open a new terminal window |
+| `Could not get a token for ga4-admin@...` | Run `bootstrap` (step 0c) again. Check that `gcloud config get-value account` is the account you used in the Firebase console |
+| `HTTP 403 ... can't access the GA4 property` | Step 0d isn't done yet. It can take a few minutes to take effect after you click Add |
+| `SERVICE_DISABLED` / `has not been used in project` | Wait 2 minutes after `bootstrap`, which enabled the APIs, then retry |
+| `Could not look up the GA4 property` | Pass it explicitly: `python3 scripts/firebase/ga4.py --property 123456789 setup`. The ID is in GA4 → Admin → Property details |
+
 ---
 
 ## 1. Create the project (done)
@@ -69,6 +182,12 @@ The `api_key` in `google-services.json` isn't a secret, but locking it to your a
 
    Repeat for each SHA-1.
 5. Leave **API restrictions** as Firebase set it, since it already lists the Firebase APIs. Click **Save**.
+
+**Option: terminal.** Use one `--sha1` per fingerprint. Colons are optional.
+
+```bash
+python3 scripts/firebase/ga4.py restrict-key --sha1 <debug SHA-1> --sha1 <Play app-signing SHA-1>
+```
 
 ## 5. Create the Remote Config parameters
 
@@ -126,40 +245,92 @@ firebase deploy --only remoteconfig
 
 ## 6. Mark key events
 
-Key events (formerly "conversions") are the actions that count as success. Marking them lets GA4 report on them directly and makes them available in funnels.
+### What a key event is, in plain words
 
-| Event name | Why it's a key event |
-|---|---|
-| `conversion_complete` | The app's core value moment |
-| `promo_click` | Measures the cross-promotion |
-| `recording_saved` | The Generator's value moment |
+Every tap and action in the app is sent to Google Analytics as an **event**. For example, `screen_view` is sent when a screen opens, `file_import` when a file is picked, and `conversion_complete` when a conversion succeeds. GA4 stores all of them, but treats them all as equally important.
 
-You can create them **now**, before any data arrives:
+A **key event** is an event you tell GA4 means **"the user got real value"**. GA4 used to call these "conversions". Here, "conversion" is about marketing and has nothing to do with audio conversion. Once an event is marked as a key event:
 
-1. Open <https://analytics.google.com> and pick the property linked to this Firebase project. The property picker is at the top left.
-2. Click **Admin** (⚙ gear, bottom left).
-3. In the **Property settings** column, open **Data display → Key events**.
-4. Click **New key event**, type `conversion_complete` exactly, and click **Save**.
-5. Repeat for `promo_click` and `recording_saved`.
+- It gets its own **Key events** column in the standard reports (Reports → Acquisition / Engagement), plus a **key event rate** (the % of users or sessions that reached it).
+- The Firebase console's Analytics dashboard shows it in its **Key events** card.
+- You can see which traffic sources, countries, devices or app versions lead to it most often.
+- If you ever run ads (Google Ads or Firebase campaigns), they can optimize toward it.
 
-Once events start arriving (up to 24 hours later), you can also do this in the Firebase console: **Analytics → Events**, find the event, and turn on **Mark as key event**.
+Marking an event doesn't change what the app sends, and it doesn't use up any custom dimension. It's only a label on the GA4 side.
+
+### Which events and why
+
+| Event name | Meaning | Why it's a key event |
+|---|---|---|
+| `conversion_complete` | A PCM or audio file was converted and saved | The main reason the app exists. If this goes down, something is broken |
+| `recording_saved` | A recording made in the Generator tab was saved | The Generator's value moment |
+| `promo_click` | The user tapped **Play** on the Flood Fill banner | Measures whether the cross-promotion works |
+
+**Counting method:** use **Once per event**, which counts every conversion. The other option, *Once per session*, counts at most one per visit and fits sign-ups or purchases better.
+
+**Default value:** leave it empty. Values are for revenue, and this app has none.
+
+### Option: terminal
+
+```bash
+python3 scripts/firebase/ga4.py setup
+```
+
+Running it once covers steps 6, 7 and 8. The key events come from `keyEvents` in `firebase/ga4_definitions.json`.
+
+### Option: by hand
+
+You can do this **before the app has sent any of these events**. GA4 starts labelling them the moment they arrive.
+
+1. Open <https://analytics.google.com> and select this app's property (top left).
+2. Click **Admin** (⚙ bottom left). In the **Property settings** column, open **Data display → Key events**.
+3. Click the blue **New key event** button (top right).
+4. Type the event name **exactly**: `conversion_complete`. It's lower case with an underscore; any typo creates a key event that never matches.
+5. Click **Save**. Leave the default counting method, **Once per event**.
+6. Repeat for `recording_saved` and `promo_click`.
+
+Later, once events are arriving, you'll also find the events in the Firebase console under **Analytics → Events**. Each one has a **Mark as key event** switch, and turning it on does the same thing.
+
+### How to check it worked
+
+- **Right away:** the **Admin → Key events** list shows the 3 names. In the terminal, `python3 scripts/firebase/ga4.py status` prints them under *Key events*.
+- **Within seconds** (DebugView, step 9): convert a file in a debug build. In DebugView, `conversion_complete` appears with a green **flag icon**, which marks key events.
+- **After 24–48 hours:** **Reports → Engagement → Key events** lists them with counts, and the Firebase Analytics dashboard shows them on its **Key events** card.
 
 ## 7. Register custom dimensions and metrics
 
-**Why this is needed:** GA4 receives every event parameter, such as `output_format` or `error_type`, but reports and Explorations **can only filter or break down by a parameter after it's registered** as a custom dimension. Data arrives from the moment you register it; anything sent before that can't be reported on, so register these early.
+### What they are and why you need them
 
-### How to create one
+Each event carries **parameters**: extra details such as `output_format = wav` or `error_type = IOException`. GA4 stores all of them, but reports and Explorations can **only filter or group by a parameter once it's registered** as a **custom dimension** (for text) or a **custom metric** (for numbers you want to sum or average).
 
-1. Open <https://analytics.google.com>, then **Admin** (⚙) → **Property settings** column → **Data display → Custom definitions**.
+**Data before registration can't be reported on.** That's why you should register these early, even before many users have the new version.
+
+- **Event-scoped dimension:** describes one event. Example: which `output_format` *this* conversion used.
+- **User-scoped dimension:** describes the user, and comes from a *user property*. Example: their `theme`. You can split any report by it ("do Midnight-theme users convert more?").
+- **Custom metric:** a number per event. Example: `duration_ms` lets you chart the average conversion time.
+
+Free-tier limits are 50 event-scoped dimensions, 25 user-scoped dimensions and 50 custom metrics. This app uses 18, 3 and 3.
+
+### Option: terminal
+
+```bash
+python3 scripts/firebase/ga4.py setup
+```
+
+The definitions live in `customDimensions` and `customMetrics` in `firebase/ga4_definitions.json`. To add a new parameter later, add a row to that file and run `setup` again. Existing ones are skipped.
+
+### Option: by hand
+
+1. Open <https://analytics.google.com> → **Admin** (⚙) → **Property settings** column → **Data display → Custom definitions**.
 2. On the **Custom dimensions** tab, click **Create custom dimension**.
 3. Fill in the form with one row from the tables below:
-   - **Dimension name:** a readable label, shown in reports. For example `Output format`.
-   - **Scope:** `Event` for the first table, `User` for the second.
+   - **Dimension name:** the readable label shown in reports, for example `Output format`. Use letters, numbers, spaces and `_` only, with no brackets.
+   - **Scope:** **Event** for the first table, **User** for the second.
    - **Description:** optional.
-   - **Event parameter** (for Event scope) or **User property** (for User scope): type the **exact parameter name**, for example `output_format`. If the dropdown is empty because no data has arrived yet, just type the name.
-4. Click **Save**. Repeat for each row. This takes about 30 seconds per row.
+   - **Event parameter** (Event scope) or **User property** (User scope): type the exact parameter name, for example `output_format`. If the dropdown is empty because no data has arrived yet, just type the name.
+4. Click **Save**, and repeat for every row. It takes about 30 seconds per row.
 
-**Event-scoped dimensions.** Set Scope to **Event**. The Spark limit is 50 and these use 18.
+**Event-scoped dimensions** (Scope: **Event**):
 
 | Dimension name | Event parameter | Example values |
 |---|---|---|
@@ -182,7 +353,7 @@ Once events start arriving (up to 24 hours later), you can also do this in the F
 | Permission granted | `granted` | `true`, `false` |
 | Promo ID | `promo_id` | `floodfill` |
 
-**User-scoped dimensions.** Set Scope to **User**. The limit is 25.
+**User-scoped dimensions** (Scope: **User**):
 
 | Dimension name | User property |
 |---|---|
@@ -190,23 +361,33 @@ Once events start arriving (up to 24 hours later), you can also do this in the F
 | Haptics enabled | `haptics_enabled` |
 | Has converted | `has_converted` |
 
-**Custom metrics** are numbers you can sum or average. To create one, go to the same page, open the **Custom metrics** tab, and click **Create custom metric**:
+**Custom metrics.** Use the same page, open the **Custom metrics** tab, and click **Create custom metric**:
 
 | Metric name | Scope | Event parameter | Unit of measurement |
 |---|---|---|---|
-| Duration (ms) | Event | `duration_ms` | Milliseconds |
-| Duration (s) | Event | `duration_s` | Seconds |
+| Duration ms | Event | `duration_ms` | Milliseconds |
+| Duration s | Event | `duration_s` | Seconds |
 | Impression number | Event | `impression_n` | Standard |
 
 Screen names (`screen_view` → `screen_name`) are built into GA4 as **Page title and screen name**, so they don't need registering.
 
+### How to check it worked
+
+- Run `python3 scripts/firebase/ga4.py status`, or look at the **Custom definitions** page. All 21 dimensions and 3 metrics should be listed.
+- About 24–48 hours after users send data, the new dimensions can be picked in **Explore**, and they appear in `python3 scripts/firebase/ga4.py report`.
+
 ## 8. Data retention
 
+By default, GA4 keeps detailed event data for only **2 months**. This affects **Explorations** (funnels, custom tables, `ga4.py report` with dimensions). Standard reports keep their totals regardless. On the free tier, the most you can set is **14 months**, which allows year-over-year comparisons.
+
+**Option: terminal.** `python3 scripts/firebase/ga4.py setup` sets it, using `"dataRetention": "FOURTEEN_MONTHS"` in the definitions file.
+
+**Option: by hand:**
 1. Go to analytics.google.com → **Admin** → **Property settings** → **Data collection and modification → Data retention**.
-2. Set **Event data retention** to **14 months**, the maximum on the free tier. The default is 2 months.
+2. Set **Event data retention** to **14 months**.
 3. Click **Save**.
 
-This only limits how far back **Explorations** can go. The standard reports aren't affected.
+The change isn't retroactive: data that has already expired stays deleted.
 
 ## 9. Check events live with DebugView
 
@@ -234,6 +415,25 @@ In debug builds every event is also printed to logcat under the tag `Analytics`.
 
 ## 10. Reports to build (GA4 → Explore)
 
+**Option: terminal.** This prints the key numbers directly, with no clicking:
+
+```bash
+python3 scripts/firebase/ga4.py report --days 28
+```
+
+It shows:
+- the core funnel with success and failure rates
+- conversions by direction and format
+- failures by error and stage
+- screen views
+- permission prompts
+- promo impressions and clicks
+- daily active users
+
+Sections that use custom dimensions say *"not registered yet"* until step 7 is done and about 24–48 hours of data has arrived.
+
+**Option: by hand (visual):**
+
 Go to analytics.google.com → **Explore** (left menu) → **Blank**. To get dimensions into an exploration, click **+** next to *Dimensions* or *Metrics* and import the ones you registered in step 7.
 
 - **Core funnel:** choose the **Funnel exploration** template. Add steps `file_import` → `conversion_start` → `conversion_complete`, and set **Breakdown** to *Conversion direction* or *Output format*. This shows where users drop out.
@@ -248,6 +448,9 @@ Go to analytics.google.com → **Explore** (left menu) → **Blank**. To get dim
 Optional: **Admin → Product links → BigQuery links** can export raw events to the free BigQuery sandbox (10 GB of storage and 1 TB of queries per month, no billing). Sandbox tables expire after 60 days.
 
 ## 11. Google Play Data safety form
+
+> **Why there's no terminal option:** the Play Developer API can upload Data safety answers, but only as the CSV file that the Play Console form itself exports. Filling in the form once by hand (about 5 minutes) is simpler and less error-prone.
+
 
 Go to Play Console → your app → **Policy and programs → App content → Data safety → Manage**. Answer:
 

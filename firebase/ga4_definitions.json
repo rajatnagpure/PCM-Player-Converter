@@ -1,0 +1,37 @@
+{
+  "_comment": "Single source of truth for GA4 property configuration. Applied by scripts/firebase/ga4.py setup. Parameter names must match analytics/AnalyticsEvents.kt.",
+  "dataRetention": "FOURTEEN_MONTHS",
+  "keyEvents": [
+    { "eventName": "conversion_complete", "countingMethod": "ONCE_PER_EVENT" },
+    { "eventName": "promo_click", "countingMethod": "ONCE_PER_EVENT" },
+    { "eventName": "recording_saved", "countingMethod": "ONCE_PER_EVENT" }
+  ],
+  "customDimensions": [
+    { "parameterName": "direction", "displayName": "Conversion direction", "scope": "EVENT", "description": "pcm_to_audio or audio_to_pcm" },
+    { "parameterName": "output_format", "displayName": "Output format", "scope": "EVENT", "description": "wav, m4a or flac" },
+    { "parameterName": "encoding", "displayName": "PCM encoding", "scope": "EVENT", "description": "bit_8, bit_16 or float_32" },
+    { "parameterName": "sample_rate", "displayName": "Sample rate", "scope": "EVENT", "description": "Sample rate in Hz" },
+    { "parameterName": "channels", "displayName": "Channels", "scope": "EVENT", "description": "1 mono, 2 stereo" },
+    { "parameterName": "error_type", "displayName": "Error type", "scope": "EVENT", "description": "Exception class name" },
+    { "parameterName": "stage", "displayName": "Failure stage", "scope": "EVENT", "description": "convert or copy_out" },
+    { "parameterName": "source", "displayName": "Import source", "scope": "EVENT", "description": "picker or external_intent" },
+    { "parameterName": "target", "displayName": "Target screen", "scope": "EVENT", "description": "converter or generator" },
+    { "parameterName": "file_ext", "displayName": "File extension", "scope": "EVENT", "description": "Input file extension" },
+    { "parameterName": "size_bucket", "displayName": "File size bucket", "scope": "EVENT", "description": "Coarse input size bucket" },
+    { "parameterName": "screen", "displayName": "Screen", "scope": "EVENT", "description": "Screen where the event happened" },
+    { "parameterName": "setting", "displayName": "Setting", "scope": "EVENT", "description": "theme, haptics or analytics" },
+    { "parameterName": "value", "displayName": "Setting value", "scope": "EVENT", "description": "New value of the setting" },
+    { "parameterName": "item", "displayName": "Drawer item", "scope": "EVENT", "description": "Drawer menu item tapped" },
+    { "parameterName": "permission", "displayName": "Permission", "scope": "EVENT", "description": "record_audio or post_notifications" },
+    { "parameterName": "granted", "displayName": "Permission granted", "scope": "EVENT", "description": "true or false" },
+    { "parameterName": "promo_id", "displayName": "Promo ID", "scope": "EVENT", "description": "Cross-promo identifier" },
+    { "parameterName": "theme", "displayName": "Theme", "scope": "USER", "description": "Selected app theme" },
+    { "parameterName": "haptics_enabled", "displayName": "Haptics enabled", "scope": "USER", "description": "Haptics setting" },
+    { "parameterName": "has_converted", "displayName": "Has converted", "scope": "USER", "description": "Completed at least one conversion" }
+  ],
+  "customMetrics": [
+    { "parameterName": "duration_ms", "displayName": "Duration ms", "measurementUnit": "MILLISECONDS", "scope": "EVENT", "description": "Conversion duration" },
+    { "parameterName": "duration_s", "displayName": "Duration s", "measurementUnit": "SECONDS", "scope": "EVENT", "description": "Playback or recording duration" },
+    { "parameterName": "impression_n", "displayName": "Impression number", "measurementUnit": "STANDARD", "scope": "EVENT", "description": "Which showing of the promo banner" }
+  ]
+}
