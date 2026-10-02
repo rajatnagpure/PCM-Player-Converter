@@ -70,6 +70,9 @@ fun AppNavigation(
                     // Decode once to ensure ViewModels receive the original URI string
                     val decodedUri = if (encodedParam.isNotBlank()) android.net.Uri.decode(encodedParam) else null
 
+                    // On a cold start from a share intent this effect can run before NavHost has
+                    // set its graph; wait for the first back stack entry instead of crashing/ignoring.
+                    navController.currentBackStackEntryFlow.first()
                     android.util.Log.d("AppNavigation", "Graph ready, navigating to: $route")
                     navController.navigate(route) {
                         popUpTo(navController.graph.findStartDestination().id) {

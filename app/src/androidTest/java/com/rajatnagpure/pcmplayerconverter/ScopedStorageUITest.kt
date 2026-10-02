@@ -16,7 +16,7 @@ class ScopedStorageUITest {
     @Test
     fun testGeneratorScreen_initialState_scopedStorageButtons() {
         // Navigate to Generator Tab
-        composeTestRule.onNodeWithText("Generator").performClick()
+        composeTestRule.onNode(hasText("Generator", ignoreCase = true) and hasClickAction()).performClick()
         
         // Verify primary actions exist
         composeTestRule.onNodeWithText("Record", ignoreCase = true).assertExists().assertHasClickAction()
@@ -32,7 +32,7 @@ class ScopedStorageUITest {
     @Test
     fun testConverterScreen_initialState_scopedStorageButtons() {
         // Start at Converter Tab
-        composeTestRule.onNodeWithText("Converter").performClick()
+        composeTestRule.onNode(hasText("Converter", ignoreCase = true) and hasClickAction()).performClick()
 
         // Verify "Select" button for input file
         composeTestRule.onNodeWithText("Select", ignoreCase = true).assertExists().assertHasClickAction()
