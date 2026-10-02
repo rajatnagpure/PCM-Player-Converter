@@ -180,7 +180,7 @@ fun DropdownSelector(
             }
             
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                options.forEach { option ->
+                for (option in options) {
                     DropdownMenuItem(
                         text = { Text(option.toString(), style = MaterialTheme.typography.bodyLarge) },
                         onClick = {

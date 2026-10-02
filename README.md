@@ -24,9 +24,15 @@ An Android app for working with raw **PCM** audio:
 | JDK | 21 (Android Studio's bundled JBR, or any installed JDK 21) |
 | Android SDK | compileSdk / targetSdk 36, minSdk 23 |
 | Gradle | 9.8 (via the wrapper) |
-| AGP / Kotlin | 9.4 / 2.4 |
+| AGP / Kotlin | 9.0 / 2.4 |
 
 All versions are defined in [`gradle/libs.versions.toml`](gradle/libs.versions.toml).
+
+AGP is pinned to **9.0.0** because Android Studio 2025.2 can't sync anything newer ("Latest supported version is AGP 9.0.0"). After updating Android Studio you can raise `agp` in the catalog.
+
+> **Android Studio tips for this project**
+> - Don't run a terminal `./gradlew` build while Android Studio is building. Both write to `app/build/`, which can corrupt the output (for example, dex-merge errors).
+> - Studio 2025.2's **Apply Changes / Live Edit** compiles with an older built-in Kotlin than the project's 2.4. If the app crashes right after a hot-swap with `NoSuchMethodError`, use **Run** with a full reinstall, or turn Live Edit off under *Settings → Editor → Live Edit*.
 
 ### "Gradle requires JVM 17 or later to run"
 

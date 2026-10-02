@@ -55,7 +55,7 @@ class FirebaseAnalyticsTracker @Inject constructor(
         if (BuildConfig.DEBUG) Log.w(TAG, "non-fatal $context", throwable)
         if (!firebaseReady) return
         val crashlytics = FirebaseCrashlytics.getInstance()
-        context.forEach { (k, v) -> crashlytics.setCustomKey(k, v) }
+        for ((k, v) in context) crashlytics.setCustomKey(k, v)
         crashlytics.recordException(throwable)
     }
 
