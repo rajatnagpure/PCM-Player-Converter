@@ -5,7 +5,9 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ConversionEventsTest {
@@ -41,5 +43,17 @@ class ConversionEventsTest {
         events.publish(new)
         events.acknowledge(old)
         assertEquals(new, events.results(ConversionOrigin.CONVERTER).first())
+    }
+
+    @Test
+    fun `busy tracks running tasks`() = runTest {
+        val events = ConversionEvents()
+        assertFalse(events.isBusy.first())
+        events.setBusy(ConversionEvents.TASK_CONVERSION, true)
+        events.setBusy(ConversionEvents.TASK_RECORDING, true)
+        events.setBusy(ConversionEvents.TASK_CONVERSION, false)
+        assertTrue(events.isBusy.first())
+        events.setBusy(ConversionEvents.TASK_RECORDING, false)
+        assertFalse(events.isBusy.first())
     }
 }

@@ -61,6 +61,7 @@ class ConversionService : Service() {
                 ConversionNotifications.progress(this),
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC else 0
             )
+            conversionEvents.setBusy(ConversionEvents.TASK_CONVERSION, true)
 
             val eventParams = conversionParams(task, inFile, config)
             analytics.logEvent(AnalyticsEvents.CONVERSION_START, eventParams)
@@ -142,6 +143,7 @@ class ConversionService : Service() {
                 } finally {
                     // Clean up temp file
                     tempFile?.delete()
+                    conversionEvents.setBusy(ConversionEvents.TASK_CONVERSION, false)
                     // Only the progress notification is removed; the result notification stays.
                     ServiceCompat.stopForeground(this@ConversionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
                     stopSelf(startId)

@@ -79,6 +79,11 @@ class GeneratorViewModel @Inject constructor(
         }
     }
 
+    override fun onCleared() {
+        super.onCleared()
+        conversionEvents.setBusy(ConversionEvents.TASK_RECORDING, false)
+    }
+
     private fun onConversionResult(result: ConversionResult) {
         _uiState.value = if (result.success) {
             val msg = if (result.outputName != null) "Conversion completed — saved as ${result.outputName}" else "Conversion completed"
@@ -113,6 +118,7 @@ class GeneratorViewModel @Inject constructor(
         viewModelScope.launch {
             if (_uiState.value.isRecording) {
                 recordAudioUseCase.stop()
+                conversionEvents.setBusy(ConversionEvents.TASK_RECORDING, false)
                 analytics.logEvent(
                     AnalyticsEvents.RECORDING_STOP,
                     recordingParams(config) + (AnalyticsEvents.P_DURATION_S to (SystemClock.elapsedRealtime() - recordingStartedAt) / 1000)
@@ -129,12 +135,14 @@ class GeneratorViewModel @Inject constructor(
                 val cacheDir = application.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: application.cacheDir
                 val file = File(cacheDir, "temp_recording.pcm")
                 _uiState.value = _uiState.value.copy(isRecording = true, statusMessage = "Recording...", lastRecordedFile = file, errorMessage = null)
+                conversionEvents.setBusy(ConversionEvents.TASK_RECORDING, true)
                 recordingStartedAt = SystemClock.elapsedRealtime()
                 analytics.logEvent(AnalyticsEvents.RECORDING_START, recordingParams(config))
                 try {
                     recordAudioUseCase.start(file, config)
                 } catch (e: Exception) {
                     _uiState.value = _uiState.value.copy(isRecording = false, errorMessage = "Recording error: ${e.message}")
+                    conversionEvents.setBusy(ConversionEvents.TASK_RECORDING, false)
                     analytics.logEvent(
                         AnalyticsEvents.RECORDING_FAILED,
                         recordingParams(config) + (AnalyticsEvents.P_ERROR_TYPE to AnalyticsEvents.errorType(e))

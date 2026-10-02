@@ -31,6 +31,8 @@ import com.rajatnagpure.pcmplayerconverter.ui.components.AudioPlayerSheet
 import com.rajatnagpure.pcmplayerconverter.ui.screens.ConverterScreen
 import com.rajatnagpure.pcmplayerconverter.ui.screens.GeneratorScreen
 import com.rajatnagpure.pcmplayerconverter.ui.viewmodel.MainViewModel
+import com.rajatnagpure.pcmplayerconverter.ui.viewmodel.PromoViewModel
+import com.rajatnagpure.pcmplayerconverter.ui.components.PromoBanner
 import com.rajatnagpure.pcmplayerconverter.analytics.AnalyticsEvents
 import com.rajatnagpure.pcmplayerconverter.config.AppConfig
 import com.rajatnagpure.pcmplayerconverter.util.PlayStore
@@ -49,7 +51,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun AppNavigation(
     intentRouteEvent: com.rajatnagpure.pcmplayerconverter.MainActivity.IntentRouteEvent? = null,
-    mainViewModel: MainViewModel = hiltViewModel()
+    mainViewModel: MainViewModel = hiltViewModel(),
+    promoViewModel: PromoViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
 
@@ -120,6 +123,7 @@ fun AppNavigation(
     val isPaused by mainViewModel.isPaused.collectAsState()
     val currentFile by mainViewModel.currentFile.collectAsState()
     val progress by mainViewModel.progress.collectAsState()
+    val promoVisible by promoViewModel.visible.collectAsState()
 
     LaunchedEffect(isPlayerVisible) {
         if (isPlayerVisible) mainViewModel.trackOverlay(AnalyticsEvents.SCREEN_PLAYER)
@@ -343,11 +347,19 @@ fun AppNavigation(
                 }
             }
         ) { innerPadding ->
-            Box(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                PromoBanner(
+                    visible = promoVisible,
+                    onPlayClick = {
+                        promoViewModel.onClick()
+                        PlayStore.openListing(context, AppConfig.FLOODFILL_PACKAGE, AppConfig.FLOODFILL_REFERRER)
+                    },
+                    onDismiss = { promoViewModel.onDismiss() }
+                )
                 NavHost(
                     navController = navController,
                     startDestination = "converter?uri={uri}",
-                    modifier = Modifier.padding(innerPadding)
+                    modifier = Modifier.weight(1f)
                 ) {
                     composable(
                         route = "converter?uri={uri}",
