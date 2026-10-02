@@ -198,13 +198,12 @@ The parameters you'll create:
 | Parameter name (key) | Data type | Default value | What it controls |
 |---|---|---|---|
 | `promo_floodfill_enabled` | Boolean | `true` | Set to `false` to turn the banner off for everyone |
-| `promo_min_sessions` | Number | `2` | The banner never shows before this app launch, so never on the first launch |
-| `promo_cooldown_days` | Number | `3` | Minimum days between launches that show the banner |
-| `promo_dismiss_snooze_days` | Number | `14` | Days the banner stays hidden after the user taps ✕ |
-| `promo_max_impressions` | Number | `5` | Lifetime number of launches that may show the banner |
-| `promo_max_dismissals` | Number | `2` | Hide the banner permanently after this many ✕ taps |
-| `promo_click_snooze_days` | Number | `21` | Days the banner stays hidden after the user taps **Play** but doesn't install |
-| `promo_max_clicks` | Number | `2` | Hide the banner permanently after this many **Play** taps |
+| `promo_min_sessions` | Number | `2` | The banner never shows before this app launch, so never on the first launch. Set to `1` to show it from the first launch |
+| `promo_dismiss_snooze_days` | Number | `4` | Days until the banner comes back after the user taps ✕ |
+| `promo_max_dismissals` | Number | `2` | While this many ✕ taps fall inside the window below, the banner stays hidden |
+| `promo_dismiss_window_days` | Number | `14` | The rolling window for `promo_max_dismissals`. The banner returns once the older ✕ tap is more than this many days old |
+
+There's no impression limit, and tapping **Play** never hides the banner. It stays until the user taps ✕ or installs Color Shift.
 
 ### Option A: in the Firebase console, by hand (about 5 minutes)
 
@@ -217,12 +216,12 @@ The parameters you'll create:
    - **Default value:** `true`
    - Leave **"Use in-app default"** unticked, and don't add conditions.
 4. Click **Save**. The parameter appears in the list, and a yellow bar says you have **unpublished changes**.
-5. Click **Add parameter** and repeat steps 3–4 for the other seven rows. Use **Data type: Number** for those.
-6. When all eight are listed, click **Publish changes** at the top, then **Publish** in the dialog. Changes have no effect until you publish.
+5. Click **Add parameter** and repeat steps 3–4 for the other four rows. Use **Data type: Number** for those.
+6. When all five are listed, click **Publish changes** at the top, then **Publish** in the dialog. Changes have no effect until you publish.
 
 ### Option B: one command with the Firebase CLI
 
-The repo contains the same eight parameters in `firebase/remoteconfig.template.json`. `firebase.json` and `.firebaserc` point that file at the project.
+The repo contains the same five parameters in `firebase/remoteconfig.template.json`. `firebase.json` and `.firebaserc` point that file at the project.
 
 ```bash
 npm install -g firebase-tools
@@ -242,7 +241,7 @@ firebase deploy --only remoteconfig
 
 - The app fetches new values at most **every 12 hours** (every 1 minute in debug builds). The new values apply on the **next app launch**.
 - **Example: turning the banner off.** Set `promo_floodfill_enabled` to `false`, then Publish. It disappears for users within about 12 hours plus one restart.
-- **Example: showing it less often.** Raise `promo_cooldown_days` to `7`, then Publish.
+- **Example: backing off longer after a ✕.** Raise `promo_dismiss_snooze_days` to `7`, then Publish.
 - To check what's live, open the **Remote Config** page. It shows each parameter's current value and the version history; click **⋮ → Version history** to roll back.
 
 ## 6. Mark key events
@@ -443,7 +442,7 @@ Go to analytics.google.com → **Explore** (left menu) → **Blank**. To get dim
 - **Feature adoption:** in a **Free form** exploration, use **Page title and screen name** × **Active users**.
 - **Recording funnel:** `permission_result` → `recording_start` → `recording_stop` → `recording_saved`.
 - **Notification opt-in:** use the event `permission_result`, filter **Permission** to `post_notifications`, and break down by **Permission granted**.
-- **Promo CTR:** compare `promo_click` events with `promo_impression` events. Add **Impression number** to see which showing gets clicked.
+- **Promo CTR:** compare `promo_click` events with `promo_impression` events (one impression per app launch that shows the banner). Add **Impression number** to see which showing gets clicked. On `promo_dismiss`, **Setting value** is `snoozed_4d` or `capped_14d`, so you can see how many dismissals hit the 14-day cap.
 - **Retention:** the built-in **Reports → Retention**, plus a **Cohort exploration** template.
 - **Opened from other apps:** use the event `external_file_open`. It shows how many users arrive from "Share" or "Open with".
 
@@ -489,4 +488,4 @@ Also update your privacy policy to say the app uses Google Analytics for Firebas
 | `permission_result` | `permission`, `granted` | The microphone or notification prompt is answered |
 | `settings_changed` | `setting`, `value` | Theme, haptics or analytics toggle |
 | `drawer_action`, `share` | `item` / `method`, `content_type` | A drawer menu item is tapped |
-| `promo_impression` / `promo_click` / `promo_dismiss` | `promo_id`, `impression_n` | The Color Shift banner |
+| `promo_impression` / `promo_click` / `promo_dismiss` | `promo_id`, `impression_n`, `value` (dismiss: `snoozed_4d` / `capped_14d`) | The Color Shift banner |

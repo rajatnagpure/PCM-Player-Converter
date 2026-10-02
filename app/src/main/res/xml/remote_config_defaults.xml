@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- In-app defaults for Firebase Remote Config. Keep in sync with PromoConfig.DEFAULT. -->
+<!-- In-app defaults for Firebase Remote Config. Keep in sync with PromoConfig.DEFAULT
+     and firebase/remoteconfig.template.json. -->
 <defaultsMap>
     <entry>
         <key>promo_floodfill_enabled</key>
@@ -10,27 +11,15 @@
         <value>2</value>
     </entry>
     <entry>
-        <key>promo_cooldown_days</key>
-        <value>3</value>
-    </entry>
-    <entry>
         <key>promo_dismiss_snooze_days</key>
-        <value>14</value>
-    </entry>
-    <entry>
-        <key>promo_max_impressions</key>
-        <value>5</value>
+        <value>4</value>
     </entry>
     <entry>
         <key>promo_max_dismissals</key>
         <value>2</value>
     </entry>
     <entry>
-        <key>promo_click_snooze_days</key>
-        <value>21</value>
-    </entry>
-    <entry>
-        <key>promo_max_clicks</key>
-        <value>2</value>
+        <key>promo_dismiss_window_days</key>
+        <value>14</value>
     </entry>
 </defaultsMap>

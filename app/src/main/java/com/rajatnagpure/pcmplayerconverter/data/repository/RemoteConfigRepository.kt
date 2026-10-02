@@ -44,12 +44,9 @@ class RemoteConfigRepository @Inject constructor(
         return PromoConfig(
             enabled = rc.getBoolean(KEY_PROMO_ENABLED),
             minSessions = rc.getLong(KEY_MIN_SESSIONS).toInt(),
-            cooldownDays = rc.getLong(KEY_COOLDOWN_DAYS).toInt(),
             dismissSnoozeDays = rc.getLong(KEY_SNOOZE_DAYS).toInt(),
-            clickSnoozeDays = rc.getLong(KEY_CLICK_SNOOZE_DAYS).toInt(),
-            maxImpressions = rc.getLong(KEY_MAX_IMPRESSIONS).toInt(),
             maxDismissals = rc.getLong(KEY_MAX_DISMISSALS).toInt(),
-            maxClicks = rc.getLong(KEY_MAX_CLICKS).toInt()
+            dismissWindowDays = rc.getLong(KEY_DISMISS_WINDOW_DAYS).toInt()
         )
     }
 
@@ -58,11 +55,8 @@ class RemoteConfigRepository @Inject constructor(
         private const val FETCH_INTERVAL_SECONDS = 12L * 60 * 60
         const val KEY_PROMO_ENABLED = "promo_floodfill_enabled"
         const val KEY_MIN_SESSIONS = "promo_min_sessions"
-        const val KEY_COOLDOWN_DAYS = "promo_cooldown_days"
         const val KEY_SNOOZE_DAYS = "promo_dismiss_snooze_days"
-        const val KEY_MAX_IMPRESSIONS = "promo_max_impressions"
         const val KEY_MAX_DISMISSALS = "promo_max_dismissals"
-        const val KEY_CLICK_SNOOZE_DAYS = "promo_click_snooze_days"
-        const val KEY_MAX_CLICKS = "promo_max_clicks"
+        const val KEY_DISMISS_WINDOW_DAYS = "promo_dismiss_window_days"
     }
 }

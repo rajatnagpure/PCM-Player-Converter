@@ -125,6 +125,11 @@ fun AppNavigation(
     val progress by mainViewModel.progress.collectAsState()
     val promoVisible by promoViewModel.visible.collectAsState()
 
+    // Re-check on every return to the app, e.g. from the Play Store after installing the game
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+        promoViewModel.refresh()
+    }
+
     LaunchedEffect(isPlayerVisible) {
         if (isPlayerVisible) mainViewModel.trackOverlay(AnalyticsEvents.SCREEN_PLAYER)
     }

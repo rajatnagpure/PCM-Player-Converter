@@ -3,6 +3,8 @@ package com.rajatnagpure.pcmplayerconverter.data.repository
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import com.rajatnagpure.pcmplayerconverter.domain.promo.PromoCapPolicy
+import com.rajatnagpure.pcmplayerconverter.domain.promo.PromoConfig
 import com.rajatnagpure.pcmplayerconverter.domain.promo.PromoState
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.concurrent.TimeUnit
@@ -19,69 +21,46 @@ class PromoRepository @Inject constructor(
 ) {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    /** In-memory: whether the banner has already been shown during this process. */
-    var shownThisSession: Boolean = false
-        private set
-
-    /** In-memory: user closed or clicked the banner during this process. */
-    var closedThisSession: Boolean = false
+    /** In-memory: an impression was already logged during this process (analytics only). */
+    var impressionLoggedThisSession: Boolean = false
         private set
 
     fun state(): PromoState = PromoState(
         sessionCount = prefs.getInt(KEY_SESSION_COUNT, 0),
-        impressions = prefs.getInt(KEY_IMPRESSIONS, 0),
-        lastShownAt = prefs.getLong(KEY_LAST_SHOWN_AT, 0L),
-        dismissCount = prefs.getInt(KEY_DISMISS_COUNT, 0),
-        clickCount = clickCount(),
-        snoozeUntil = prefs.getLong(KEY_SNOOZE_UNTIL, 0L)
+        dismissals = prefs.getString(KEY_DISMISSALS, null)
+            ?.split(',')?.mapNotNull { it.toLongOrNull() }.orEmpty()
     )
-
-    // Builds before click snoozing stored a boolean; treat a stored "true" as one click.
-    private fun clickCount(): Int =
-        prefs.getInt(KEY_CLICK_COUNT, if (prefs.getBoolean(KEY_CLICKED_LEGACY, false)) 1 else 0)
 
     fun incrementSessionCount() {
         prefs.edit { putInt(KEY_SESSION_COUNT, prefs.getInt(KEY_SESSION_COUNT, 0) + 1) }
     }
 
-    /** Returns the new lifetime impression count. */
-    fun recordImpression(nowMs: Long): Int {
+    /** Lifetime impression counter, used only to number promo_impression events. */
+    fun recordImpression(): Int {
         val count = prefs.getInt(KEY_IMPRESSIONS, 0) + 1
-        prefs.edit {
-            putInt(KEY_IMPRESSIONS, count)
-            putLong(KEY_LAST_SHOWN_AT, nowMs)
-        }
-        shownThisSession = true
+        prefs.edit { putInt(KEY_IMPRESSIONS, count) }
+        impressionLoggedThisSession = true
         return count
     }
 
-    fun recordDismiss(nowMs: Long, snoozeDays: Int) {
-        prefs.edit {
-            putInt(KEY_DISMISS_COUNT, prefs.getInt(KEY_DISMISS_COUNT, 0) + 1)
-            putLong(KEY_SNOOZE_UNTIL, nowMs + TimeUnit.DAYS.toMillis(snoozeDays.toLong()))
-        }
-        closedThisSession = true
-    }
+    fun impressions(): Int = prefs.getInt(KEY_IMPRESSIONS, 0)
 
-    /** A click opens the Play Store; if the user doesn't install, offer it again after [snoozeDays]. */
-    fun recordClick(nowMs: Long, snoozeDays: Int) {
-        val count = clickCount() + 1
-        prefs.edit {
-            putInt(KEY_CLICK_COUNT, count)
-            remove(KEY_CLICKED_LEGACY)
-            putLong(KEY_SNOOZE_UNTIL, maxOf(prefs.getLong(KEY_SNOOZE_UNTIL, 0L), nowMs + TimeUnit.DAYS.toMillis(snoozeDays.toLong())))
-        }
-        closedThisSession = true
+    /**
+     * Records a ✕ tap. Returns true when this tap reaches the dismissal cap, i.e. the banner now
+     * stays hidden until the oldest dismissal in the window is more than the window old.
+     */
+    fun recordDismiss(nowMs: Long, config: PromoConfig): Boolean {
+        // Keep only dismissals still inside the window; older ones no longer count.
+        val window = TimeUnit.DAYS.toMillis(config.dismissWindowDays.toLong())
+        val dismissals = (state().dismissals + nowMs).filter { nowMs - it < window }
+        prefs.edit { putString(KEY_DISMISSALS, dismissals.joinToString(",")) }
+        return PromoCapPolicy.isDismissCapped(dismissals, config, nowMs)
     }
 
     companion object {
         private const val PREFS_NAME = "pcm_settings"
         private const val KEY_SESSION_COUNT = "session_count"
         private const val KEY_IMPRESSIONS = "promo_floodfill_impressions"
-        private const val KEY_LAST_SHOWN_AT = "promo_floodfill_last_shown_at"
-        private const val KEY_DISMISS_COUNT = "promo_floodfill_dismiss_count"
-        private const val KEY_SNOOZE_UNTIL = "promo_floodfill_snooze_until"
-        private const val KEY_CLICK_COUNT = "promo_floodfill_click_count"
-        private const val KEY_CLICKED_LEGACY = "promo_floodfill_clicked"
+        private const val KEY_DISMISSALS = "promo_floodfill_dismissals"
     }
 }

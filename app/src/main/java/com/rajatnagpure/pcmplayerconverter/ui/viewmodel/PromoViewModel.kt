@@ -39,45 +39,55 @@ class PromoViewModel @Inject constructor(
         viewModelScope.launch { evaluate() }
     }
 
+    /**
+     * Shows the banner whenever the policy allows. Called at launch and again on every resume, so
+     * the banner disappears as soon as the user comes back from the Play Store with the game installed.
+     */
+    fun refresh() {
+        viewModelScope.launch { evaluate() }
+    }
+
     private suspend fun evaluate() {
-        if (promoRepository.closedThisSession) return
-        if (promoRepository.shownThisSession) {
-            // Same launch, e.g. activity recreated: keep showing without counting a new impression
-            _visible.value = true
-            return
-        }
         val eligible = PromoCapPolicy.shouldShow(
             state = promoRepository.state(),
             config = remoteConfigRepository.promoConfig(),
             nowMs = clock(),
             isTargetInstalled = isInstalled(AppConfig.FLOODFILL_PACKAGE)
         )
-        if (!eligible) return
-        // Never interrupt an active conversion/recording
+        if (!eligible) {
+            _visible.value = false
+            return
+        }
+        if (_visible.value) return
+        // Never pop in during an active conversion/recording
         conversionEvents.isBusy.first { !it }
-        val impression = promoRepository.recordImpression(clock())
         _visible.value = true
-        analytics.logEvent(
-            AnalyticsEvents.PROMO_IMPRESSION,
-            mapOf(AnalyticsEvents.P_PROMO_ID to AnalyticsEvents.PROMO_FLOODFILL, AnalyticsEvents.P_IMPRESSION_N to impression)
-        )
+        if (!promoRepository.impressionLoggedThisSession) {
+            analytics.logEvent(
+                AnalyticsEvents.PROMO_IMPRESSION,
+                mapOf(AnalyticsEvents.P_PROMO_ID to AnalyticsEvents.PROMO_FLOODFILL, AnalyticsEvents.P_IMPRESSION_N to promoRepository.recordImpression())
+            )
+        }
     }
 
+    /** Opens the store only: the banner stays until the game is installed or the user dismisses it. */
     fun onClick() {
-        promoRepository.recordClick(clock(), remoteConfigRepository.promoConfig().clickSnoozeDays)
-        _visible.value = false
         analytics.logEvent(
             AnalyticsEvents.PROMO_CLICK,
-            mapOf(AnalyticsEvents.P_PROMO_ID to AnalyticsEvents.PROMO_FLOODFILL, AnalyticsEvents.P_IMPRESSION_N to promoRepository.state().impressions)
+            mapOf(AnalyticsEvents.P_PROMO_ID to AnalyticsEvents.PROMO_FLOODFILL, AnalyticsEvents.P_IMPRESSION_N to promoRepository.impressions())
         )
     }
 
     fun onDismiss() {
-        promoRepository.recordDismiss(clock(), remoteConfigRepository.promoConfig().dismissSnoozeDays)
+        val capped = promoRepository.recordDismiss(clock(), remoteConfigRepository.promoConfig())
         _visible.value = false
         analytics.logEvent(
             AnalyticsEvents.PROMO_DISMISS,
-            mapOf(AnalyticsEvents.P_PROMO_ID to AnalyticsEvents.PROMO_FLOODFILL, AnalyticsEvents.P_IMPRESSION_N to promoRepository.state().impressions)
+            mapOf(
+                AnalyticsEvents.P_PROMO_ID to AnalyticsEvents.PROMO_FLOODFILL,
+                AnalyticsEvents.P_IMPRESSION_N to promoRepository.impressions(),
+                AnalyticsEvents.P_VALUE to if (capped) "capped_14d" else "snoozed_4d"
+            )
         )
     }
 

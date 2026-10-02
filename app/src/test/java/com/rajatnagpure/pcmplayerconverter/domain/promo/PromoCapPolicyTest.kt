@@ -17,39 +17,39 @@ class PromoCapPolicyTest {
 
     @Test fun `shows for an eligible returning user`() = assertTrue(show())
 
-    @Test fun `hidden on first session`() = assertFalse(show(eligible.copy(sessionCount = 1)))
+    @Test fun `keeps showing on every launch with no impression limit`() =
+        assertTrue(show(eligible.copy(sessionCount = 500)))
+
+    @Test fun `hidden on first launch`() = assertFalse(show(eligible.copy(sessionCount = 1)))
+
+    @Test fun `shown on first launch when min sessions is 1`() =
+        assertTrue(show(eligible.copy(sessionCount = 1), cfg = config.copy(minSessions = 1)))
 
     @Test fun `hidden when remotely disabled`() = assertFalse(show(cfg = config.copy(enabled = false)))
 
-    @Test fun `hidden when game already installed`() = assertFalse(show(installed = true))
+    @Test fun `hidden once the game is installed`() = assertFalse(show(installed = true))
 
-    @Test fun `a click without install snoozes, then shows again`() {
-        val clickedOnce = eligible.copy(impressions = 1, clickCount = 1, lastShownAt = now - config.clickSnoozeDays * day)
-        assertFalse(show(clickedOnce.copy(snoozeUntil = now + 1)))
-        assertTrue(show(clickedOnce.copy(snoozeUntil = now)))
+    @Test fun `comes back exactly 4 days after a dismissal`() {
+        val snooze = config.dismissSnoozeDays * day
+        assertFalse(show(eligible.copy(dismissals = listOf(now - snooze + 1))))
+        assertTrue(show(eligible.copy(dismissals = listOf(now - snooze))))
     }
 
-    @Test fun `hidden forever after max clicks`() {
-        assertFalse(show(eligible.copy(clickCount = config.maxClicks)))
+    @Test fun `two dismissals in the last 14 days keep it hidden`() {
+        // dismissed on day -10 and day -6: snooze is over, but 2 taps are inside the window
+        assertFalse(show(eligible.copy(dismissals = listOf(now - 10 * day, now - 6 * day))))
     }
 
-    @Test fun `hidden after max impressions`() {
-        assertTrue(show(eligible.copy(impressions = config.maxImpressions - 1)))
-        assertFalse(show(eligible.copy(impressions = config.maxImpressions)))
+    @Test fun `comes back once the older dismissal leaves the 14-day window`() {
+        val window = config.dismissWindowDays * day
+        assertFalse(show(eligible.copy(dismissals = listOf(now - window + 1, now - 6 * day))))
+        assertTrue(show(eligible.copy(dismissals = listOf(now - window, now - 6 * day))))
     }
 
-    @Test fun `hidden after max dismissals`() {
-        assertFalse(show(eligible.copy(dismissCount = config.maxDismissals)))
-    }
-
-    @Test fun `respects snooze after dismiss`() {
-        assertFalse(show(eligible.copy(dismissCount = 1, snoozeUntil = now + 1)))
-        assertTrue(show(eligible.copy(dismissCount = 1, snoozeUntil = now)))
-    }
-
-    @Test fun `respects cooldown between showing sessions`() {
-        val cooldown = config.cooldownDays * day
-        assertFalse(show(eligible.copy(impressions = 1, lastShownAt = now - cooldown + 1)))
-        assertTrue(show(eligible.copy(impressions = 1, lastShownAt = now - cooldown)))
+    @Test fun `isDismissCapped counts only the rolling window`() {
+        val window = config.dismissWindowDays * day
+        assertTrue(PromoCapPolicy.isDismissCapped(listOf(now - 4 * day, now), config, now))
+        assertFalse(PromoCapPolicy.isDismissCapped(listOf(now - window, now), config, now))
+        assertFalse(PromoCapPolicy.isDismissCapped(listOf(now), config, now))
     }
 }

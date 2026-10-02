@@ -55,7 +55,7 @@ graph TD
 ## Global UI Components
 
 - **AudioPlayerSheet**: Acts as a global modal overlay dialog that can be triggered from anywhere via the `MainViewModel`. When `isPlayerVisible` is true, the `AudioPlayerSheet` appears over the current screen.
-- **PromoBanner**: A dismissable "Try Color Shift" card rendered above the `NavHost`, so it appears on both tabs (never on the Help screen). Visibility is decided by `PromoViewModel` / `PromoCapPolicy`.
+- **PromoBanner**: A dismissable "Try Color Shift" card rendered above the `NavHost`, so it appears on both tabs (never on the Help screen). Visibility is decided by `PromoViewModel` / `PromoCapPolicy`, and re-evaluated on every `ON_RESUME`, for example after returning from the Play Store.
 
 ## Cold-start intent handling
 

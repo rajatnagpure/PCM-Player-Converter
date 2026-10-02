@@ -89,15 +89,13 @@ The event catalog and the console setup are documented in [FIREBASE_SETUP.md](FI
 
 ## Cross-promo banner
 
-`PromoBanner` (Color Shift, package `com.rajatnagpure.floodfill`) sits above the `NavHost`. `PromoCapPolicy` decides when it may show:
+`PromoBanner` (Color Shift, package `com.rajatnagpure.floodfill`) sits above the `NavHost`. It's capped on **dismissals only**. There's no impression limit, and tapping Play only opens the store. `PromoCapPolicy` decides when it may show:
 1. Remote Config can switch it off.
-2. It never shows if Color Shift is already installed. This is the real success signal.
-3. It never shows on the first launch.
-4. It shows at most once per launch, with a 3-day cooldown between launches that show it.
-5. Tapping ✕ snoozes it for 14 days.
-6. Tapping **Play** without installing snoozes it for 21 days.
-7. It's hidden permanently after 2 dismissals, 2 clicks or 5 showings.
+2. It never shows once Color Shift is installed. This is re-checked on every resume, so it disappears when the user returns from the Play Store with the game installed.
+3. It doesn't show on the first launch (`promo_min_sessions`).
+4. After a ✕ tap it comes back after 4 days.
+5. While 2 ✕ taps fall within the last 14 days, it stays hidden. It returns once the older tap leaves that rolling window.
 
-In the worst case a user sees it 5 times, spread over at least 2 weeks and usually much longer.
+Otherwise it shows on every launch until the user taps ✕ or installs the game. `promo_impression` is logged once per launch that shows it.
 
 It also waits while a conversion or recording is running. The thresholds come from Remote Config, with defaults in `res/xml/remote_config_defaults.xml` and `firebase/remoteconfig.template.json`.

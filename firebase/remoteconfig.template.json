@@ -11,49 +11,28 @@
       "defaultValue": {
         "value": "2"
       },
-      "description": "Banner never shows before this app launch number (1 = first launch)",
-      "valueType": "NUMBER"
-    },
-    "promo_cooldown_days": {
-      "defaultValue": {
-        "value": "3"
-      },
-      "description": "Minimum days between app launches that show the banner",
+      "description": "Banner never shows before this app launch number (1 = show from the first launch)",
       "valueType": "NUMBER"
     },
     "promo_dismiss_snooze_days": {
       "defaultValue": {
-        "value": "14"
+        "value": "4"
       },
-      "description": "Days the banner stays hidden after the user taps X",
-      "valueType": "NUMBER"
-    },
-    "promo_max_impressions": {
-      "defaultValue": {
-        "value": "5"
-      },
-      "description": "Lifetime cap on launches that show the banner",
+      "description": "Days until the banner comes back after the user taps X",
       "valueType": "NUMBER"
     },
     "promo_max_dismissals": {
       "defaultValue": {
         "value": "2"
       },
-      "description": "Hide the banner forever after this many dismissals",
+      "description": "While this many X taps fall within promo_dismiss_window_days, the banner stays hidden",
       "valueType": "NUMBER"
     },
-    "promo_click_snooze_days": {
+    "promo_dismiss_window_days": {
       "defaultValue": {
-        "value": "21"
+        "value": "14"
       },
-      "description": "Days the banner stays hidden after the user taps Play but does not install",
-      "valueType": "NUMBER"
-    },
-    "promo_max_clicks": {
-      "defaultValue": {
-        "value": "2"
-      },
-      "description": "Hide the banner forever after this many Play taps",
+      "description": "Rolling window (days) for promo_max_dismissals; the banner returns once the older tap leaves it",
       "valueType": "NUMBER"
     }
   }

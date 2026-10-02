@@ -2,7 +2,9 @@ package com.rajatnagpure.pcmplayerconverter.data.repository
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import com.rajatnagpure.pcmplayerconverter.domain.promo.PromoConfig
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -14,6 +16,8 @@ import java.util.concurrent.TimeUnit
 class PromoRepositoryTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
+    private val day = TimeUnit.DAYS.toMillis(1)
+    private val config = PromoConfig.DEFAULT
 
     @Before
     fun clear() {
@@ -21,32 +25,30 @@ class PromoRepositoryTest {
     }
 
     @Test
-    fun `persists sessions, impressions, dismissals and clicks`() {
+    fun `persists sessions and impressions`() {
         val repo = PromoRepository(context)
         repo.incrementSessionCount()
         repo.incrementSessionCount()
-        assertEquals(1, repo.recordImpression(nowMs = 100L))
-        assertTrue(repo.shownThisSession)
-        repo.recordDismiss(nowMs = 200L, snoozeDays = 14)
-        assertTrue(repo.closedThisSession)
-
-        val reloaded = PromoRepository(context).state()
-        assertEquals(2, reloaded.sessionCount)
-        assertEquals(1, reloaded.impressions)
-        assertEquals(100L, reloaded.lastShownAt)
-        assertEquals(1, reloaded.dismissCount)
-        assertEquals(200L + TimeUnit.DAYS.toMillis(14), reloaded.snoozeUntil)
-
-        repo.recordClick(nowMs = 1_000L, snoozeDays = 21)
-        val afterClick = PromoRepository(context).state()
-        assertEquals(1, afterClick.clickCount)
-        assertEquals(1_000L + TimeUnit.DAYS.toMillis(21), afterClick.snoozeUntil)
+        assertEquals(1, repo.recordImpression())
+        assertTrue(repo.impressionLoggedThisSession)
+        assertEquals(2, PromoRepository(context).state().sessionCount)
+        assertEquals(1, PromoRepository(context).impressions())
     }
 
     @Test
-    fun `legacy clicked flag counts as one click`() {
-        context.getSharedPreferences("pcm_settings", Context.MODE_PRIVATE).edit()
-            .putBoolean("promo_floodfill_clicked", true).commit()
-        assertEquals(1, PromoRepository(context).state().clickCount)
+    fun `second dismissal within 14 days reaches the cap`() {
+        val repo = PromoRepository(context)
+        assertFalse(repo.recordDismiss(nowMs = 100 * day, config = config))
+        assertEquals(listOf(100 * day), PromoRepository(context).state().dismissals)
+        assertTrue(repo.recordDismiss(nowMs = 104 * day, config = config))
+        assertEquals(listOf(100 * day, 104 * day), PromoRepository(context).state().dismissals)
+    }
+
+    @Test
+    fun `dismissals far apart never cap and old ones are pruned`() {
+        val repo = PromoRepository(context)
+        assertFalse(repo.recordDismiss(nowMs = 100 * day, config = config))
+        assertFalse(repo.recordDismiss(nowMs = 120 * day, config = config))
+        assertEquals(listOf(120 * day), PromoRepository(context).state().dismissals)
     }
 }

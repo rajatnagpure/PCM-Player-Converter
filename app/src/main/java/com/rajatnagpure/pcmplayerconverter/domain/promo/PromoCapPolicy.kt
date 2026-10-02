@@ -5,40 +5,38 @@ import java.util.concurrent.TimeUnit
 /** Tunables for the cross-promo banner; overridable from Firebase Remote Config. */
 data class PromoConfig(
     val enabled: Boolean = true,
+    /** The banner never shows before this app launch (2 = not on the first launch). */
     val minSessions: Int = 2,
-    val cooldownDays: Int = 3,
-    val dismissSnoozeDays: Int = 14,
-    val clickSnoozeDays: Int = 21,
-    val maxImpressions: Int = 5,
+    /** After the user taps ✕, the banner comes back after this many days. */
+    val dismissSnoozeDays: Int = 4,
+    /** While this many dismissals fall inside the last [dismissWindowDays], the banner stays hidden. */
     val maxDismissals: Int = 2,
-    val maxClicks: Int = 2
+    val dismissWindowDays: Int = 14
 ) {
     companion object {
         val DEFAULT = PromoConfig()
     }
 }
 
-/** Persisted promo history. Timestamps are epoch millis, 0 = never. */
+/** Persisted promo history. Timestamps are epoch millis. */
 data class PromoState(
     val sessionCount: Int = 0,
-    val impressions: Int = 0,
-    val lastShownAt: Long = 0L,
-    val dismissCount: Int = 0,
-    val clickCount: Int = 0,
-    val snoozeUntil: Long = 0L
-)
+    /** Dismissal times, oldest first. */
+    val dismissals: List<Long> = emptyList()
+) {
+    val lastDismissAt: Long get() = dismissals.lastOrNull() ?: 0L
+}
 
 /**
- * Frequency-capping rules for the promo banner, kept pure so every rule is unit-testable:
+ * The banner is capped on dismissals only — impressions and Play taps never hide it:
  *  1. Remote kill-switch.
- *  2. Never if the promoted app is already installed (the real "success" signal).
- *  3. Never again after [PromoConfig.maxClicks] clicks, [PromoConfig.maxDismissals] dismissals
- *     or [PromoConfig.maxImpressions] impressions.
- *  4. Not during the user's first [PromoConfig.minSessions] - 1 sessions.
- *  5. Snoozed after a dismissal ([PromoConfig.dismissSnoozeDays]) or a click that did not lead
- *     to an install ([PromoConfig.clickSnoozeDays]).
- *  6. At most one showing session every [PromoConfig.cooldownDays].
- * Per-session (once per app launch) and "not while busy" rules are applied by the caller.
+ *  2. Never once the promoted app is installed (re-checked whenever the app resumes).
+ *  3. Not during the user's first [PromoConfig.minSessions] - 1 app launches.
+ *  4. Hidden for [PromoConfig.dismissSnoozeDays] after each dismissal.
+ *  5. Hidden while [PromoConfig.maxDismissals] dismissals fall within the last
+ *     [PromoConfig.dismissWindowDays]; it returns once the older one leaves that window.
+ * Nothing is permanent apart from the install check.
+ * Otherwise it stays visible on every launch. "Not while busy" is applied by the caller.
  */
 object PromoCapPolicy {
 
@@ -50,14 +48,15 @@ object PromoCapPolicy {
     ): Boolean {
         if (!config.enabled) return false
         if (isTargetInstalled) return false
-        if (state.clickCount >= config.maxClicks) return false
-        if (state.dismissCount >= config.maxDismissals) return false
-        if (state.impressions >= config.maxImpressions) return false
         if (state.sessionCount < config.minSessions) return false
-        if (nowMs < state.snoozeUntil) return false
-        if (state.lastShownAt > 0 && nowMs - state.lastShownAt < TimeUnit.DAYS.toMillis(config.cooldownDays.toLong())) {
-            return false
-        }
+        if (state.lastDismissAt > 0 && nowMs - state.lastDismissAt < days(config.dismissSnoozeDays)) return false
+        if (isDismissCapped(state.dismissals, config, nowMs)) return false
         return true
     }
+
+    /** True while [PromoConfig.maxDismissals] or more dismissals fall within the rolling window. */
+    fun isDismissCapped(dismissals: List<Long>, config: PromoConfig, nowMs: Long): Boolean =
+        dismissals.count { nowMs - it < days(config.dismissWindowDays) } >= config.maxDismissals
+
+    private fun days(n: Int) = TimeUnit.DAYS.toMillis(n.toLong())
 }
