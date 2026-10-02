@@ -2,10 +2,7 @@ package com.rajatnagpure.pcmplayerconverter.ui.viewmodel
 import com.rajatnagpure.pcmplayerconverter.ui.components.AppText as Text
 
 import android.app.Application
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,6 +11,10 @@ import com.rajatnagpure.pcmplayerconverter.domain.model.AudioConfig
 import com.rajatnagpure.pcmplayerconverter.domain.model.PcmEncoding
 import com.rajatnagpure.pcmplayerconverter.domain.usecase.ConvertPcmUseCase
 import com.rajatnagpure.pcmplayerconverter.domain.usecase.PlayAudioUseCase
+import com.rajatnagpure.pcmplayerconverter.service.ConversionEvents
+import com.rajatnagpure.pcmplayerconverter.service.ConversionOrigin
+import com.rajatnagpure.pcmplayerconverter.service.ConversionResult
+import com.rajatnagpure.pcmplayerconverter.service.ConversionService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.File
 import javax.inject.Inject
@@ -28,41 +29,18 @@ class ConverterViewModel @Inject constructor(
     private val playAudioUseCase: PlayAudioUseCase,
     private val localFileDataSource: LocalFileDataSource,
     savedStateHandle: androidx.lifecycle.SavedStateHandle,
-    private val application: Application
+    private val application: Application,
+    private val conversionEvents: ConversionEvents
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ConverterUiState())
     val uiState: StateFlow<ConverterUiState> = _uiState.asStateFlow()
 
-    private val conversionReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent == null) return
-            if (intent.action == com.rajatnagpure.pcmplayerconverter.service.ConversionService.ACTION_CONVERSION_COMPLETE) {
-                val success = intent.getBooleanExtra("success", false)
-                val outUriString = intent.getStringExtra("outUri")
-                val outPath = intent.getStringExtra("outFile")
-                // Clear converting flags and set message
-                viewModelScope.launch {
-                     val msg = if (success) {
-                         if (outUriString != null) "Saved to selected file" else "Saved: ${outPath?.substringAfterLast('/')}"
-                     } else {
-                         "Conversion failed"
-                     }
-                    _uiState.value = _uiState.value.copy(isConverting = false, conversionMessage = msg)
-                }
-            }
-        }
-    }
-
     init {
-        // register broadcast receiver to listen for conversion completion
-        val filter = IntentFilter().apply {
-            addAction(com.rajatnagpure.pcmplayerconverter.service.ConversionService.ACTION_CONVERSION_COMPLETE)
-        }
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            application.registerReceiver(conversionReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
-        } else {
-            application.registerReceiver(conversionReceiver, filter)
+        // Results are delivered through the in-process ConversionEvents bus and held until shown,
+        // so the "completed" message survives ViewModel recreation and never leaks to Generator.
+        viewModelScope.launch {
+            conversionEvents.results(ConversionOrigin.CONVERTER).collect { onConversionResult(it) }
         }
 
         viewModelScope.launch {
@@ -88,13 +66,19 @@ class ConverterViewModel @Inject constructor(
         }
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        try {
-            application.unregisterReceiver(conversionReceiver)
-        } catch (e: Exception) {
-            // ignore
+    private fun onConversionResult(result: ConversionResult) {
+        val msg = if (result.success) {
+            if (result.outputName != null) "Conversion completed — saved as ${result.outputName}" else "Conversion completed"
+        } else {
+            "Conversion failed" + (result.errorMessage?.let { ": $it" } ?: "")
         }
+        _uiState.value = _uiState.value.copy(
+            isConverting = false,
+            conversionMessage = msg,
+            conversionSucceeded = result.success,
+            toastMessage = msg
+        )
+        conversionEvents.acknowledge(result)
     }
 
     fun onFileSelected(uri: Uri) {
@@ -148,12 +132,14 @@ class ConverterViewModel @Inject constructor(
     fun saveFileToUri(outUri: Uri) {
         val inFile = _uiState.value.selectedFile ?: return
         val config = _uiState.value.audioConfig
-        _uiState.value = _uiState.value.copy(showSaveDialog = false, isConverting = true)
+        _uiState.value = _uiState.value.copy(showSaveDialog = false, isConverting = true, conversionSucceeded = null)
 
-        val intent = Intent(application, com.rajatnagpure.pcmplayerconverter.service.ConversionService::class.java).apply {
-            putExtra("inFile", inFile)
-            putExtra("outUri", outUri.toString())
-            putExtra("config", config)
+        val intent = Intent(application, ConversionService::class.java).apply {
+            putExtra(ConversionService.EXTRA_IN_FILE, inFile)
+            putExtra(ConversionService.EXTRA_OUT_URI, outUri.toString())
+            putExtra(ConversionService.EXTRA_CONFIG, config)
+            putExtra(ConversionService.EXTRA_ORIGIN, ConversionOrigin.CONVERTER.name)
+            putExtra(ConversionService.EXTRA_JOB_ID, System.currentTimeMillis())
         }
         
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
@@ -162,8 +148,8 @@ class ConverterViewModel @Inject constructor(
             application.startService(intent)
         }
         
-        // conversionMessage will be cleared when broadcast received
-        _uiState.value = _uiState.value.copy(conversionMessage = "Conversion started in background...")
+        // conversionMessage is replaced when the result arrives via ConversionEvents
+        _uiState.value = _uiState.value.copy(conversionMessage = "Converting…")
     }
 
     fun togglePlay() {
@@ -188,7 +174,12 @@ class ConverterViewModel @Inject constructor(
 
     // allow external clearing of conversion message
     fun clearConversionMessage() {
-        _uiState.value = _uiState.value.copy(conversionMessage = null)
+        _uiState.value = _uiState.value.copy(conversionMessage = null, conversionSucceeded = null)
+    }
+
+    // one-shot toast shown by the screen
+    fun clearToastMessage() {
+        _uiState.value = _uiState.value.copy(toastMessage = null)
     }
 }
 
@@ -199,6 +190,8 @@ data class ConverterUiState(
     val isPlaying: Boolean = false,
     val errorMessage: String? = null,
     val conversionMessage: String? = null,
+    val conversionSucceeded: Boolean? = null,
+    val toastMessage: String? = null,
     val showSaveDialog: Boolean = false,
     val suggestedFileName: String = ""
 )

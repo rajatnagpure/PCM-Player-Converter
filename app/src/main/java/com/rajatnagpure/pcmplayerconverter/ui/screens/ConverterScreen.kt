@@ -11,7 +11,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
@@ -31,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import com.rajatnagpure.pcmplayerconverter.ui.components.AppButton
+import com.rajatnagpure.pcmplayerconverter.util.rememberNotificationPermissionGate
 import com.rajatnagpure.pcmplayerconverter.ui.components.NeuCard
 import com.rajatnagpure.pcmplayerconverter.ui.components.AudioConfigSelector
 import com.rajatnagpure.pcmplayerconverter.ui.viewmodel.ConverterViewModel
@@ -61,6 +64,28 @@ fun ConverterScreen(
             }
         }
     }
+
+    val context = LocalContext.current
+
+    // One-shot toast + bring the result into view, so completion is never missed below the fold
+    LaunchedEffect(uiState.toastMessage) {
+        uiState.toastMessage?.let {
+            android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_LONG).show()
+            viewModel.clearToastMessage()
+        }
+    }
+    LaunchedEffect(uiState.conversionMessage) {
+        if (uiState.conversionMessage != null) {
+            // wait for the status card to be laid out so maxValue includes it
+            androidx.compose.runtime.withFrameNanos { }
+            scrollState.animateScrollTo(scrollState.maxValue)
+        }
+    }
+
+    // Ask (once) for notification permission so we can post "Conversion completed"
+    val convertWithPermission = rememberNotificationPermissionGate(
+        action = { viewModel.requestSaveFileName() }
+    )
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
@@ -164,13 +189,28 @@ fun ConverterScreen(
                 )
             }
             
-            if (uiState.conversionMessage != null) {
-                Text(
-                    text = uiState.conversionMessage ?: "",
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+            uiState.conversionMessage?.let { message ->
+                val succeeded = uiState.conversionSucceeded
+                val tint = if (succeeded == false) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                NeuCard(modifier = Modifier.fillMaxWidth(), cornerRadius = 16.dp, contentPadding = 12.dp) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (succeeded != null) {
+                            Icon(
+                                imageVector = if (succeeded) Icons.Default.CheckCircle else Icons.Default.ErrorOutline,
+                                contentDescription = null,
+                                tint = tint,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        Text(
+                            text = message,
+                            color = tint,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
             }
 
             if (uiState.isConverting) {
@@ -196,7 +236,7 @@ fun ConverterScreen(
                 AppButton(
                     text = "Convert & Save",
                     icon = Icons.Default.Transform,
-                    onClick = { viewModel.requestSaveFileName() },
+                    onClick = convertWithPermission,
                     enabled = !uiState.isConverting && uiState.selectedFile != null,
                     modifier = Modifier.weight(1f)
                 )

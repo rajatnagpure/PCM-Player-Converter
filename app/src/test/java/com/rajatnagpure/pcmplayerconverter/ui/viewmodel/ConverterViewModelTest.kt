@@ -4,6 +4,9 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import com.rajatnagpure.pcmplayerconverter.data.local.LocalFileDataSource
+import com.rajatnagpure.pcmplayerconverter.service.ConversionEvents
+import com.rajatnagpure.pcmplayerconverter.service.ConversionOrigin
+import com.rajatnagpure.pcmplayerconverter.service.ConversionResult
 import com.rajatnagpure.pcmplayerconverter.domain.usecase.ConvertPcmUseCase
 import com.rajatnagpure.pcmplayerconverter.domain.usecase.PlayAudioUseCase
 import io.mockk.coEvery
@@ -37,6 +40,7 @@ class ConverterViewModelTest {
     private lateinit var application: Application
     private lateinit var savedStateHandle: SavedStateHandle
     private lateinit var viewModel: ConverterViewModel
+    private lateinit var conversionEvents: ConversionEvents
 
     @Before
     fun setup() {
@@ -48,6 +52,7 @@ class ConverterViewModelTest {
         localFileDataSource = mockk(relaxed = true)
         application = mockk(relaxed = true)
         savedStateHandle = SavedStateHandle()
+        conversionEvents = ConversionEvents()
     }
 
     @After
@@ -57,7 +62,7 @@ class ConverterViewModelTest {
 
     @Test
     fun `onFileSelected updates uiState with selected file`() = runTest {
-        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application)
+        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application, conversionEvents)
         
         val mockUri = mockk<Uri>(relaxed = true)
         val fakeFile = File("test.pcm")
@@ -74,7 +79,7 @@ class ConverterViewModelTest {
 
     @Test
     fun `saveFileToUri triggers conversion service and sets isConverting`() = runTest {
-        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application)
+        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application, conversionEvents)
         
         // Setup initial state with a file
         val mockUri = mockk<Uri>(relaxed = true)
@@ -102,10 +107,47 @@ class ConverterViewModelTest {
         val fakeFile = File("test.pcm")
         coEvery { localFileDataSource.copyUriToCache(any()) } returns fakeFile
         
-        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application)
+        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application, conversionEvents)
         
         testDispatcher.scheduler.advanceUntilIdle()
         
         assertNotNull(viewModel.uiState.value.selectedFile)
+    }
+
+    @Test
+    fun `successful conversion shows conversion completed`() = runTest {
+        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application, conversionEvents)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val result = ConversionResult(42L, ConversionOrigin.CONVERTER, success = true, outputName = "song.wav")
+        conversionEvents.publish(result)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals("Conversion completed — saved as song.wav", state.conversionMessage)
+        assertEquals("Conversion completed — saved as song.wav", state.toastMessage)
+        assertEquals(true, state.conversionSucceeded)
+        assertEquals(false, state.isConverting)
+    }
+
+    @Test
+    fun `generator results are ignored by the converter`() = runTest {
+        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application, conversionEvents)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        conversionEvents.publish(ConversionResult(1L, ConversionOrigin.GENERATOR, success = true, outputName = "x.pcm"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(null, viewModel.uiState.value.conversionMessage)
+    }
+
+    @Test
+    fun `failed conversion shows failure reason`() = runTest {
+        viewModel = ConverterViewModel(convertPcmUseCase, playAudioUseCase, localFileDataSource, savedStateHandle, application, conversionEvents)
+        conversionEvents.publish(ConversionResult(7L, ConversionOrigin.CONVERTER, success = false, errorMessage = "Disk full"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("Conversion failed: Disk full", viewModel.uiState.value.conversionMessage)
+        assertEquals(false, viewModel.uiState.value.conversionSucceeded)
     }
 }

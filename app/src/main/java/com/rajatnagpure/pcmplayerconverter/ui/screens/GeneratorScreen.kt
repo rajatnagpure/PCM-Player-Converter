@@ -36,6 +36,7 @@ import androidx.compose.foundation.Canvas
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import com.rajatnagpure.pcmplayerconverter.ui.components.AppButton
+import com.rajatnagpure.pcmplayerconverter.util.rememberNotificationPermissionGate
 import com.rajatnagpure.pcmplayerconverter.ui.components.NeuCard
 import com.rajatnagpure.pcmplayerconverter.ui.components.AppDialog
 import com.rajatnagpure.pcmplayerconverter.ui.components.AudioConfigSelector
@@ -73,7 +74,7 @@ fun GeneratorScreen(
 
     LaunchedEffect(uiState.statusMessage) {
         uiState.statusMessage?.let {
-            android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_LONG).show()
             // ensure the message is shown only once
             viewModel.clearStatusMessage()
         }
@@ -93,6 +94,11 @@ fun GeneratorScreen(
             viewModel.toggleRecording()
         }
     }
+
+    // Ask (once) for notification permission so we can post "Conversion completed"
+    val convertWithPermission = rememberNotificationPermissionGate(
+        action = { viewModel.requestPcmSaveFileName() }
+    )
 
     val audioPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
@@ -196,7 +202,7 @@ fun GeneratorScreen(
                     AppButton(
                         text = "Convert to PCM",
                         icon = Icons.Default.Transform,
-                        onClick = { viewModel.requestPcmSaveFileName() },
+                        onClick = convertWithPermission,
                         enabled = !uiState.isConverting,
                         modifier = Modifier.fillMaxWidth()
                     )

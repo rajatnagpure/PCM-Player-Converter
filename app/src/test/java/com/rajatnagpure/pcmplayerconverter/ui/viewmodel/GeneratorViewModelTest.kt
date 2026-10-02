@@ -50,7 +50,7 @@ class GeneratorViewModelTest {
         coEvery { localData.getFileFromUri(any()) } returns fakeFile
 
         val savedStateHandle = androidx.lifecycle.SavedStateHandle(mapOf("uri" to "content://com.example/test.wav"))
-        val vm = GeneratorViewModel(recordUseCase, convertUseCase, localData, savedStateHandle, application)
+        val vm = GeneratorViewModel(recordUseCase, convertUseCase, localData, savedStateHandle, application, com.rajatnagpure.pcmplayerconverter.service.ConversionEvents())
 
         // allow coroutine to process
         kotlinx.coroutines.delay(200)
@@ -75,7 +75,7 @@ class GeneratorViewModelTest {
         coEvery { localData.getFileFromUri(any()) } returns fakeFile
 
         val savedStateHandle = androidx.lifecycle.SavedStateHandle(mapOf("uri" to "content://com.example/test.mp3"))
-        val vm = GeneratorViewModel(recordUseCase, convertUseCase, localData, savedStateHandle, application)
+        val vm = GeneratorViewModel(recordUseCase, convertUseCase, localData, savedStateHandle, application, com.rajatnagpure.pcmplayerconverter.service.ConversionEvents())
 
         // simulate file selected
         kotlinx.coroutines.delay(200)
@@ -89,5 +89,26 @@ class GeneratorViewModelTest {
 
         // immediately should be in converting state
         assertTrue(vm.uiState.value.isConverting)
+    }
+
+    @Test
+    fun `converter results do not leak into generator and own results show completed`() = runTest {
+        val recordUseCase = mockk<RecordAudioUseCase>()
+        every { recordUseCase.amplitudeFlow } returns kotlinx.coroutines.flow.MutableStateFlow(0f)
+        val events = com.rajatnagpure.pcmplayerconverter.service.ConversionEvents()
+        val vm = GeneratorViewModel(
+            recordUseCase, mockk(relaxed = true), mockk(relaxed = true),
+            androidx.lifecycle.SavedStateHandle(), mockk<Application>(relaxed = true),
+            events
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        events.publish(com.rajatnagpure.pcmplayerconverter.service.ConversionResult(1L, com.rajatnagpure.pcmplayerconverter.service.ConversionOrigin.CONVERTER, true, "a.wav"))
+        testDispatcher.scheduler.advanceUntilIdle()
+        org.junit.Assert.assertNull(vm.uiState.value.statusMessage)
+
+        events.publish(com.rajatnagpure.pcmplayerconverter.service.ConversionResult(2L, com.rajatnagpure.pcmplayerconverter.service.ConversionOrigin.GENERATOR, true, "b.pcm"))
+        testDispatcher.scheduler.advanceUntilIdle()
+        org.junit.Assert.assertEquals("Conversion completed — saved as b.pcm", vm.uiState.value.statusMessage)
     }
 }
