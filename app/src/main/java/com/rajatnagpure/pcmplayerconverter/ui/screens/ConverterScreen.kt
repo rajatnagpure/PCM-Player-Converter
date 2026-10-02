@@ -71,7 +71,11 @@ fun ConverterScreen(
     val saveLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument(uiState.audioConfig.outputFormat.mimeType)
     ) { uri ->
-        uri?.let { viewModel.saveFileToUri(it) }
+        if (uri != null) {
+            viewModel.saveFileToUri(uri)
+        } else {
+            viewModel.cancelSave()
+        }
     }
 
     if (uiState.showSaveDialog) {
@@ -79,7 +83,6 @@ fun ConverterScreen(
         // Side effect to launch the picker when the state flag is set
         LaunchedEffect(Unit) {
             saveLauncher.launch(uiState.suggestedFileName)
-            viewModel.cancelSave() // Reset flag immediately after launching
         }
     }
 

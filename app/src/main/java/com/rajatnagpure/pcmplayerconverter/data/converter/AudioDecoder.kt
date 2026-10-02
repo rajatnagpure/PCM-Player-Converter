@@ -22,10 +22,7 @@ class AudioDecoder @Inject constructor() {
         // Fallback for compressed formats: use MediaExtractor + MediaCodec pipeline
         val extractor = MediaExtractor()
         try {
-            // Use file descriptor route which can be more reliable than path strings
-            val fis = FileInputStream(inputFile)
-            extractor.setDataSource(fis.fd)
-            fis.close()
+            extractor.setDataSource(inputFile.absolutePath)
         } catch (e: Exception) {
             throw Exception("Failed to set data source for MediaExtractor: ${e.message}", e)
         }

@@ -54,7 +54,7 @@ class ConversionService : Service() {
                         tempFile
                     }
 
-                    if (task == "AUDIO_TO_PCM") {
+                    val result = if (task == "AUDIO_TO_PCM") {
                         // convert from input audio to PCM
                         convertAudioToPcmUseCase(inFile, workingFile)
                     } else {
@@ -65,6 +65,7 @@ class ConversionService : Service() {
                             throw IllegalArgumentException("Missing config for PCM conversion")
                         }
                     }
+                    result.getOrThrow()
 
                     // If we used a temp file and have a target URI, copy the result there
                     if (outUriString != null && tempFile != null && workingFile.exists()) {

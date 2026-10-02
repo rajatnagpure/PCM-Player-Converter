@@ -45,7 +45,14 @@ class PcmRecorder @Inject constructor() {
                 bufferSize
             )
 
+            if (recorder?.state != AudioRecord.STATE_INITIALIZED) {
+                throw Exception("AudioRecord initialization failed. Ensure your device microphone is available and supports sample rate ${config.sampleRate}Hz.")
+            }
+
             recorder?.startRecording()
+            if (recorder?.recordingState != AudioRecord.RECORDSTATE_RECORDING) {
+                throw Exception("Failed to start recording. The microphone might be in use by another application.")
+            }
             isRecording = true
 
             val outputStream = FileOutputStream(outputFile)
@@ -67,6 +74,11 @@ class PcmRecorder @Inject constructor() {
                             }
                         }
                         _amplitude.value = max.toFloat() / 32768f
+                    } else if (read < 0) {
+                        android.util.Log.e("PcmRecorder", "AudioRecord read error: $read")
+                        if (read == AudioRecord.ERROR_INVALID_OPERATION || read == AudioRecord.ERROR_BAD_VALUE) {
+                            break
+                        }
                     }
                 }
             } catch (e: Exception) {

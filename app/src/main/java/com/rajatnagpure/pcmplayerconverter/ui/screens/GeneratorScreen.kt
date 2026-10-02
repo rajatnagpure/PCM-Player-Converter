@@ -103,14 +103,17 @@ fun GeneratorScreen(
     val saveLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/octet-stream")
     ) { uri ->
-        uri?.let { viewModel.saveFileToUri(it) }
+        if (uri != null) {
+            viewModel.saveFileToUri(uri)
+        } else {
+            viewModel.cancelSave()
+        }
     }
 
     if (uiState.showSaveDialog) {
         // Trigger system picker
         LaunchedEffect(Unit) {
             saveLauncher.launch(uiState.suggestedFileName)
-            viewModel.cancelSave()
         }
     }
 
