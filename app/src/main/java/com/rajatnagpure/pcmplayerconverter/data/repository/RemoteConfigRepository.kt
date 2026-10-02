@@ -46,8 +46,10 @@ class RemoteConfigRepository @Inject constructor(
             minSessions = rc.getLong(KEY_MIN_SESSIONS).toInt(),
             cooldownDays = rc.getLong(KEY_COOLDOWN_DAYS).toInt(),
             dismissSnoozeDays = rc.getLong(KEY_SNOOZE_DAYS).toInt(),
+            clickSnoozeDays = rc.getLong(KEY_CLICK_SNOOZE_DAYS).toInt(),
             maxImpressions = rc.getLong(KEY_MAX_IMPRESSIONS).toInt(),
-            maxDismissals = rc.getLong(KEY_MAX_DISMISSALS).toInt()
+            maxDismissals = rc.getLong(KEY_MAX_DISMISSALS).toInt(),
+            maxClicks = rc.getLong(KEY_MAX_CLICKS).toInt()
         )
     }
 
@@ -60,5 +62,7 @@ class RemoteConfigRepository @Inject constructor(
         const val KEY_SNOOZE_DAYS = "promo_dismiss_snooze_days"
         const val KEY_MAX_IMPRESSIONS = "promo_max_impressions"
         const val KEY_MAX_DISMISSALS = "promo_max_dismissals"
+        const val KEY_CLICK_SNOOZE_DAYS = "promo_click_snooze_days"
+        const val KEY_MAX_CLICKS = "promo_max_clicks"
     }
 }

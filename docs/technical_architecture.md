@@ -29,7 +29,7 @@ State holders that manage the UI state and handle user interactions.
 - **`MainViewModel`**: Manages global state such as the active media player visibility, current playing file, and playback progress.
 - **`ConverterViewModel`**: Manages the state for converting standard audio files (WAV, MP3, etc.) to raw PCM format.
 - **`GeneratorViewModel`**: Manages the state for generating/recording PCM audio and configuring audio parameters (Sample Rate, Channels, Encoding).
-- **`PromoViewModel`**: Decides whether the Flood Fill cross-promo banner is shown (see *Cross-promo banner* below).
+- **`PromoViewModel`**: Decides whether the Color Shift cross-promo banner is shown (see *Cross-promo banner* below).
 
 ### 3. Domain Layer (`com.rajatnagpure.pcmplayerconverter.domain`)
 Contains the core business logic.
@@ -89,12 +89,15 @@ The event catalog and the console setup are documented in [FIREBASE_SETUP.md](FI
 
 ## Cross-promo banner
 
-`PromoBanner` (Flood Fill) sits above the `NavHost`. `PromoCapPolicy` decides when it may show:
+`PromoBanner` (Color Shift, package `com.rajatnagpure.floodfill`) sits above the `NavHost`. `PromoCapPolicy` decides when it may show:
 1. Remote Config can switch it off.
-2. It never shows if Flood Fill is already installed.
+2. It never shows if Color Shift is already installed. This is the real success signal.
 3. It never shows on the first launch.
 4. It shows at most once per launch, with a 3-day cooldown between launches that show it.
 5. Tapping ✕ snoozes it for 14 days.
-6. It's hidden permanently after 1 click, 2 dismissals or 5 showings.
+6. Tapping **Play** without installing snoozes it for 21 days.
+7. It's hidden permanently after 2 dismissals, 2 clicks or 5 showings.
+
+In the worst case a user sees it 5 times, spread over at least 2 weeks and usually much longer.
 
 It also waits while a conversion or recording is running. The thresholds come from Remote Config, with defaults in `res/xml/remote_config_defaults.xml` and `firebase/remoteconfig.template.json`.

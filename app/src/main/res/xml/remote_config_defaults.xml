@@ -25,4 +25,12 @@
         <key>promo_max_dismissals</key>
         <value>2</value>
     </entry>
+    <entry>
+        <key>promo_click_snooze_days</key>
+        <value>21</value>
+    </entry>
+    <entry>
+        <key>promo_max_clicks</key>
+        <value>2</value>
+    </entry>
 </defaultsMap>

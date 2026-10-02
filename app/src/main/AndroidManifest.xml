@@ -10,7 +10,7 @@
     <!-- Android 13+: needed to show "Conversion completed" notifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Package visibility: hide the Flood Fill promo when the game is already installed -->
+    <!-- Package visibility: hide the Color Shift promo when the game is already installed -->
     <queries>
         <package android:name="com.rajatnagpure.floodfill" />
     </queries>

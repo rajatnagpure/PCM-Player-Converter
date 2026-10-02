@@ -23,7 +23,15 @@ class PromoCapPolicyTest {
 
     @Test fun `hidden when game already installed`() = assertFalse(show(installed = true))
 
-    @Test fun `hidden forever after a click`() = assertFalse(show(eligible.copy(clicked = true)))
+    @Test fun `a click without install snoozes, then shows again`() {
+        val clickedOnce = eligible.copy(impressions = 1, clickCount = 1, lastShownAt = now - config.clickSnoozeDays * day)
+        assertFalse(show(clickedOnce.copy(snoozeUntil = now + 1)))
+        assertTrue(show(clickedOnce.copy(snoozeUntil = now)))
+    }
+
+    @Test fun `hidden forever after max clicks`() {
+        assertFalse(show(eligible.copy(clickCount = config.maxClicks)))
+    }
 
     @Test fun `hidden after max impressions`() {
         assertTrue(show(eligible.copy(impressions = config.maxImpressions - 1)))

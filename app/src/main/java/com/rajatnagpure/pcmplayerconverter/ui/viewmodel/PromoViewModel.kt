@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-/** Drives the dismissable "Try Flood Fill" banner. Capping rules live in [PromoCapPolicy]. */
+/** Drives the dismissable "Try Color Shift" banner. Capping rules live in [PromoCapPolicy]. */
 @HiltViewModel
 class PromoViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -64,7 +64,7 @@ class PromoViewModel @Inject constructor(
     }
 
     fun onClick() {
-        promoRepository.recordClick()
+        promoRepository.recordClick(clock(), remoteConfigRepository.promoConfig().clickSnoozeDays)
         _visible.value = false
         analytics.logEvent(
             AnalyticsEvents.PROMO_CLICK,

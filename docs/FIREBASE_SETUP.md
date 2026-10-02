@@ -6,7 +6,7 @@ The app uses three Firebase products. All of them are free on the **Spark** plan
 |---|---|---|
 | **Google Analytics for Firebase** | Records events, funnels, retention and audiences | Firebase console → Analytics, and analytics.google.com |
 | **Crashlytics** | Reports crashes, ANRs and non-fatal conversion errors | Firebase console → Crashlytics |
-| **Remote Config** | Changes the Flood Fill banner rules without a new release | Firebase console → Remote Config |
+| **Remote Config** | Changes the Color Shift banner rules without a new release | Firebase console → Remote Config |
 
 The app also builds and runs **without** Firebase. If `app/google-services.json` is missing, the Firebase Gradle plugins are skipped and every analytics call does nothing. The file is listed in `.gitignore` because this repo is public, so each developer keeps their own copy locally.
 
@@ -203,6 +203,8 @@ The parameters you'll create:
 | `promo_dismiss_snooze_days` | Number | `14` | Days the banner stays hidden after the user taps ✕ |
 | `promo_max_impressions` | Number | `5` | Lifetime number of launches that may show the banner |
 | `promo_max_dismissals` | Number | `2` | Hide the banner permanently after this many ✕ taps |
+| `promo_click_snooze_days` | Number | `21` | Days the banner stays hidden after the user taps **Play** but doesn't install |
+| `promo_max_clicks` | Number | `2` | Hide the banner permanently after this many **Play** taps |
 
 ### Option A: in the Firebase console, by hand (about 5 minutes)
 
@@ -211,16 +213,16 @@ The parameters you'll create:
 3. A side panel opens. Fill it in for the **first row** of the table above:
    - **Parameter name (key):** `promo_floodfill_enabled`. Copy it exactly; it's case-sensitive.
    - **Data type:** `Boolean`
-   - **Description:** for example "Kill switch for the Flood Fill banner". This is only a note for you.
+   - **Description:** for example "Kill switch for the Color Shift banner". This is only a note for you.
    - **Default value:** `true`
    - Leave **"Use in-app default"** unticked, and don't add conditions.
 4. Click **Save**. The parameter appears in the list, and a yellow bar says you have **unpublished changes**.
-5. Click **Add parameter** and repeat steps 3–4 for the other five rows. Use **Data type: Number** for those.
-6. When all six are listed, click **Publish changes** at the top, then **Publish** in the dialog. Changes have no effect until you publish.
+5. Click **Add parameter** and repeat steps 3–4 for the other seven rows. Use **Data type: Number** for those.
+6. When all eight are listed, click **Publish changes** at the top, then **Publish** in the dialog. Changes have no effect until you publish.
 
 ### Option B: one command with the Firebase CLI
 
-The repo contains the same six parameters in `firebase/remoteconfig.template.json`. `firebase.json` and `.firebaserc` point that file at the project.
+The repo contains the same eight parameters in `firebase/remoteconfig.template.json`. `firebase.json` and `.firebaserc` point that file at the project.
 
 ```bash
 npm install -g firebase-tools
@@ -264,7 +266,7 @@ Marking an event doesn't change what the app sends, and it doesn't use up any cu
 |---|---|---|
 | `conversion_complete` | A PCM or audio file was converted and saved | The main reason the app exists. If this goes down, something is broken |
 | `recording_saved` | A recording made in the Generator tab was saved | The Generator's value moment |
-| `promo_click` | The user tapped **Play** on the Flood Fill banner | Measures whether the cross-promotion works |
+| `promo_click` | The user tapped **Play** on the Color Shift banner | Measures whether the cross-promotion works |
 
 **Counting method:** use **Once per event**, which counts every conversion. The other option, *Once per session*, counts at most one per visit and fits sign-ups or purchases better.
 
@@ -487,4 +489,4 @@ Also update your privacy policy to say the app uses Google Analytics for Firebas
 | `permission_result` | `permission`, `granted` | The microphone or notification prompt is answered |
 | `settings_changed` | `setting`, `value` | Theme, haptics or analytics toggle |
 | `drawer_action`, `share` | `item` / `method`, `content_type` | A drawer menu item is tapped |
-| `promo_impression` / `promo_click` / `promo_dismiss` | `promo_id`, `impression_n` | The Flood Fill banner |
+| `promo_impression` / `promo_click` / `promo_dismiss` | `promo_id`, `impression_n` | The Color Shift banner |

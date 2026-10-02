@@ -37,7 +37,16 @@ class PromoRepositoryTest {
         assertEquals(1, reloaded.dismissCount)
         assertEquals(200L + TimeUnit.DAYS.toMillis(14), reloaded.snoozeUntil)
 
-        repo.recordClick()
-        assertTrue(PromoRepository(context).state().clicked)
+        repo.recordClick(nowMs = 1_000L, snoozeDays = 21)
+        val afterClick = PromoRepository(context).state()
+        assertEquals(1, afterClick.clickCount)
+        assertEquals(1_000L + TimeUnit.DAYS.toMillis(21), afterClick.snoozeUntil)
+    }
+
+    @Test
+    fun `legacy clicked flag counts as one click`() {
+        context.getSharedPreferences("pcm_settings", Context.MODE_PRIVATE).edit()
+            .putBoolean("promo_floodfill_clicked", true).commit()
+        assertEquals(1, PromoRepository(context).state().clickCount)
     }
 }

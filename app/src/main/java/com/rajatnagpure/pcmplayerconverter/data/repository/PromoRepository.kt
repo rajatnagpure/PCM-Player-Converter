@@ -32,9 +32,13 @@ class PromoRepository @Inject constructor(
         impressions = prefs.getInt(KEY_IMPRESSIONS, 0),
         lastShownAt = prefs.getLong(KEY_LAST_SHOWN_AT, 0L),
         dismissCount = prefs.getInt(KEY_DISMISS_COUNT, 0),
-        snoozeUntil = prefs.getLong(KEY_SNOOZE_UNTIL, 0L),
-        clicked = prefs.getBoolean(KEY_CLICKED, false)
+        clickCount = clickCount(),
+        snoozeUntil = prefs.getLong(KEY_SNOOZE_UNTIL, 0L)
     )
+
+    // Builds before click snoozing stored a boolean; treat a stored "true" as one click.
+    private fun clickCount(): Int =
+        prefs.getInt(KEY_CLICK_COUNT, if (prefs.getBoolean(KEY_CLICKED_LEGACY, false)) 1 else 0)
 
     fun incrementSessionCount() {
         prefs.edit { putInt(KEY_SESSION_COUNT, prefs.getInt(KEY_SESSION_COUNT, 0) + 1) }
@@ -59,8 +63,14 @@ class PromoRepository @Inject constructor(
         closedThisSession = true
     }
 
-    fun recordClick() {
-        prefs.edit { putBoolean(KEY_CLICKED, true) }
+    /** A click opens the Play Store; if the user doesn't install, offer it again after [snoozeDays]. */
+    fun recordClick(nowMs: Long, snoozeDays: Int) {
+        val count = clickCount() + 1
+        prefs.edit {
+            putInt(KEY_CLICK_COUNT, count)
+            remove(KEY_CLICKED_LEGACY)
+            putLong(KEY_SNOOZE_UNTIL, maxOf(prefs.getLong(KEY_SNOOZE_UNTIL, 0L), nowMs + TimeUnit.DAYS.toMillis(snoozeDays.toLong())))
+        }
         closedThisSession = true
     }
 
@@ -71,6 +81,7 @@ class PromoRepository @Inject constructor(
         private const val KEY_LAST_SHOWN_AT = "promo_floodfill_last_shown_at"
         private const val KEY_DISMISS_COUNT = "promo_floodfill_dismiss_count"
         private const val KEY_SNOOZE_UNTIL = "promo_floodfill_snooze_until"
-        private const val KEY_CLICKED = "promo_floodfill_clicked"
+        private const val KEY_CLICK_COUNT = "promo_floodfill_click_count"
+        private const val KEY_CLICKED_LEGACY = "promo_floodfill_clicked"
     }
 }

@@ -1,33 +1,59 @@
 {
   "parameters": {
     "promo_floodfill_enabled": {
-      "defaultValue": { "value": "true" },
-      "description": "Kill switch for the Flood Fill cross-promo banner",
+      "defaultValue": {
+        "value": "true"
+      },
+      "description": "Kill switch for the Color Shift cross-promo banner",
       "valueType": "BOOLEAN"
     },
     "promo_min_sessions": {
-      "defaultValue": { "value": "2" },
+      "defaultValue": {
+        "value": "2"
+      },
       "description": "Banner never shows before this app launch number (1 = first launch)",
       "valueType": "NUMBER"
     },
     "promo_cooldown_days": {
-      "defaultValue": { "value": "3" },
+      "defaultValue": {
+        "value": "3"
+      },
       "description": "Minimum days between app launches that show the banner",
       "valueType": "NUMBER"
     },
     "promo_dismiss_snooze_days": {
-      "defaultValue": { "value": "14" },
+      "defaultValue": {
+        "value": "14"
+      },
       "description": "Days the banner stays hidden after the user taps X",
       "valueType": "NUMBER"
     },
     "promo_max_impressions": {
-      "defaultValue": { "value": "5" },
+      "defaultValue": {
+        "value": "5"
+      },
       "description": "Lifetime cap on launches that show the banner",
       "valueType": "NUMBER"
     },
     "promo_max_dismissals": {
-      "defaultValue": { "value": "2" },
+      "defaultValue": {
+        "value": "2"
+      },
       "description": "Hide the banner forever after this many dismissals",
+      "valueType": "NUMBER"
+    },
+    "promo_click_snooze_days": {
+      "defaultValue": {
+        "value": "21"
+      },
+      "description": "Days the banner stays hidden after the user taps Play but does not install",
+      "valueType": "NUMBER"
+    },
+    "promo_max_clicks": {
+      "defaultValue": {
+        "value": "2"
+      },
+      "description": "Hide the banner forever after this many Play taps",
       "valueType": "NUMBER"
     }
   }
