@@ -357,7 +357,7 @@ fun AppNavigation(
                     visible = promoVisible,
                     onPlayClick = {
                         promoViewModel.onClick()
-                        PlayStore.openListing(context, AppConfig.FLOODFILL_PACKAGE, AppConfig.FLOODFILL_REFERRER)
+                        PlayStore.openUrl(context, AppConfig.COLOR_SHIFT_PLAY_URL)
                     },
                     onDismiss = { promoViewModel.onDismiss() }
                 )

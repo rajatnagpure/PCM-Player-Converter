@@ -443,6 +443,11 @@ Go to analytics.google.com → **Explore** (left menu) → **Blank**. To get dim
 - **Recording funnel:** `permission_result` → `recording_start` → `recording_stop` → `recording_saved`.
 - **Notification opt-in:** use the event `permission_result`, filter **Permission** to `post_notifications`, and break down by **Permission granted**.
 - **Promo CTR:** compare `promo_click` events with `promo_impression` events (one impression per app launch that shows the banner). Add **Impression number** to see which showing gets clicked. On `promo_dismiss`, **Setting value** is `snoozed_4d` or `capped_14d`, so you can see how many dismissals hit the 14-day cap.
+- **Installs from the banner:** these appear in **Color Shift's** data, not this app's. The banner's Play link carries `referrer=utm_source=pcm_player_converter&utm_medium=cross_promo&utm_campaign=in_app_banner`. Two places to look:
+  - **Play Console:** Color Shift → *Grow users → Store performance → Store analysis*. In **Traffic sources**, look for the UTM campaign `in_app_banner` (source `pcm_player_converter`).
+  - **Color Shift's Google Analytics:** if Color Shift uses Firebase Analytics, its `first_open` events carry this source, medium and campaign under **Reports → Acquisition → User acquisition**.
+
+  Compare those installs with this app's `promo_click` count to get the click-to-install rate.
 - **Retention:** the built-in **Reports → Retention**, plus a **Cohort exploration** template.
 - **Opened from other apps:** use the event `external_file_open`. It shows how many users arrive from "Share" or "Open with".
 

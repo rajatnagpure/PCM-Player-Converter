@@ -98,4 +98,15 @@ The event catalog and the console setup are documented in [FIREBASE_SETUP.md](FI
 
 Otherwise it shows on every launch until the user taps ✕ or installs the game. `promo_impression` is logged once per launch that shows it.
 
+**Link and attribution.** Tapping the card or **Play** opens `AppConfig.COLOR_SHIFT_PLAY_URL` with `PlayStore.openUrl`:
+
+```
+https://play.google.com/store/apps/details?id=com.rajatnagpure.floodfill&referrer=utm_source%3Dpcm_player_converter%26utm_medium%3Dcross_promo%26utm_campaign%3Din_app_banner
+```
+
+- The URL is opened in the Play Store app (`com.android.vending`) so the `referrer` survives. If Play isn't available, it opens in the browser instead.
+- The decoded referrer is `utm_source=pcm_player_converter&utm_medium=cross_promo&utm_campaign=in_app_banner`.
+- The Play Store passes the referrer to Color Shift on install, through the Install Referrer API.
+- `PlayStoreTest` guards the exact URL.
+
 It also waits while a conversion or recording is running. The thresholds come from Remote Config, with defaults in `res/xml/remote_config_defaults.xml` and `firebase/remoteconfig.template.json`.
